@@ -18,3 +18,20 @@
         path: ~/.zshenv
         line: 'eval "$(/opt/homebrew/bin/brew shellenv)"'
         create: true
+
+    - name: Open libvirt RW socket to the staff group
+      ansible.builtin.lineinfile:
+        path: /opt/homebrew/etc/libvirt/libvirtd.conf
+        regexp: '^#?\s*{{ item.k }}\s*='
+        line: '{{ item.k }} = "{{ item.v }}"'
+      loop:
+        - { k: "unix_sock_group",    v: "staff" }
+        - { k: "unix_sock_rw_perms", v: "0770" }
+        - { k: "auth_unix_rw",       v: "none" }
+      become: true
+      notify: restart libvirtd
+
+  handlers:
+    - name: restart libvirtd
+      ansible.builtin.command: killall libvirtd 
+      become: true
