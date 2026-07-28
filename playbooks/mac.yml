@@ -17,6 +17,6 @@
 
     - name: Add brew to PATH for shells
       ansible.builtin.lineinfile:
-        path: ~/.zprofile
+        path: ~/.zshenv
         line: 'eval "$(/opt/homebrew/bin/brew shellenv)"'
         create: true
