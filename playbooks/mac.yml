@@ -14,3 +14,9 @@
       community.general.homebrew_services:
         name: libvirt
         state: present
+
+    - name: Add brew to PATH for shells
+      ansible.builtin.lineinfile:
+        path: ~/.zprofile
+        line: 'eval "$(/opt/homebrew/bin/brew shellenv)"'
+        create: true
