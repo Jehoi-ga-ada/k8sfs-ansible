@@ -4,3 +4,13 @@
   roles:
     - elliotweiser.osx-command-line-tools
     - geerlingguy.mac.homebrew
+  tasks:
+    - name: Install qemu & libvirt
+      community.general.homebrew:
+        name: [qemu, libvirt]
+        state: present
+
+    - name: Start libvirt service
+      community.general.homebrew_services:
+        name: libvirt
+        state: present
