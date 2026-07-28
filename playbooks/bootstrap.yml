@@ -1,0 +1,27 @@
+---
+- name: Create Passwordless Sudo User
+  hosts: jeho-mac
+  become: true
+  roles:
+    - elliotweiser.osx-command-line-tools
+  tasks:
+    - name: Create new system user
+      ansible.builtin.user:
+        name: "{{ username }}"
+        shell: /bin/bash
+        create_home: true
+        state: present
+
+    - name: Configure passwordless sudo privileges
+      ansible.builtin.copy:
+        content: "{{ username }} ALL=(ALL) NOPASSWD: ALL\n"
+        dest: "/etc/sudoers.d/{{ username }}"
+        owner: root
+        group: wheel # mac os - use root for linux
+        mode: '0440'
+        validate: '/usr/sbin/visudo -cf %s'
+
+    - name: Install SSH public key for the new user
+      ansible.posix.authorized_key:
+        user: "{{ username }}"
+        key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/ansible.pub') }}"

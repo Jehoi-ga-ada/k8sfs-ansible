@@ -1,9 +1,8 @@
 ---
-- name: Bootstrapping for Mac OS
-  hosts: kube-host
+- name: Prerequisite for VM terraforming
+  hosts: macos
   roles:
-    - elliotweiser.osx-command-line-tools
-    - geerlingguy.mac.homebrew
+    - geerlingguy.mac.hombrew
   tasks:
     - name: Install qemu & libvirt
       community.general.homebrew:
