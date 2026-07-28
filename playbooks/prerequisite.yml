@@ -9,10 +9,9 @@
         name: [qemu, libvirt]
         state: present
 
-    - name: Start libvirt service
-      community.general.homebrew_services:
-        name: libvirt
-        state: present
+    - name: Start libvirt as a root service
+      ansible.builtin.shell: sudo brew services start libvirt
+      environment: { PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}" }
 
     - name: Add brew to PATH for shells
       ansible.builtin.lineinfile:
