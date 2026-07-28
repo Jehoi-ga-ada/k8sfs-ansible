@@ -2,7 +2,7 @@
 - name: Prerequisite for VM terraforming
   hosts: macos
   roles:
-    - geerlingguy.mac.hombrew
+    - geerlingguy.mac.homebrew
   tasks:
     - name: Install qemu & libvirt
       community.general.homebrew:
