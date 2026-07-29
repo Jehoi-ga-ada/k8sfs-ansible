@@ -31,6 +31,31 @@
       become: true
       notify: restart libvirtd
 
+    - name: Check default pool state
+      ansible.builtin.command: virsh -c qemu:///system pool-info default
+      environment: {PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"}
+      register: pool_info
+      changed_when: false
+      failed_when: false
+
+    - name: Define & build default pool (if doesn't exist)
+      ansible.builtin.command: "{{ item }}" 
+      environment: {PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"}
+      loop: 
+        - virsh -c qemu:///system pool-define-as default dir --target /opt/homebrew/var/lib/libvirt/images/
+        - virsh -c qemu:///system pool-build default
+      when: pool_info.rc != 0
+
+    - name: Start the pool (only if not already running)
+      ansible.builtin.command: virsh -c qemu:///system pool-start default
+      environment: {PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"}
+      when: "'running' not in pool_info.stdout | lower"
+
+    - name: Ensure autostart
+      ansible.builtin.command: virsh -c qemu:///system pool-autostart default
+      environment: {PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"}
+      changed_when: false
+
   handlers:
     - name: restart libvirtd
       ansible.builtin.command: killall libvirtd 
