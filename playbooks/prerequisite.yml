@@ -1,62 +1,26 @@
 ---
 - name: Prerequisite for VM terraforming
   hosts: macos
+  environment:
+    PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}" 
   roles:
     - geerlingguy.mac.homebrew
   tasks:
-    - name: Install qemu & libvirt
-      community.general.homebrew:
-        name: [qemu, libvirt]
-        state: present
-
-    - name: Start libvirt as a root service
-      ansible.builtin.shell: sudo brew services start libvirt
-      environment: { PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}" }
-
     - name: Add brew to PATH for shells
       ansible.builtin.lineinfile:
-        path: ~/.zshenv
+        path: "{{ ansible_user_dir }}/.zshenv"
         line: 'eval "$(/opt/homebrew/bin/brew shellenv)"'
         create: true
 
-    - name: Open libvirt RW socket to the staff group
-      ansible.builtin.lineinfile:
-        path: /opt/homebrew/etc/libvirt/libvirtd.conf
-        regexp: '^#?\s*{{ item.k }}\s*='
-        line: '{{ item.k }} = "{{ item.v }}"'
-      loop:
-        - { k: "unix_sock_group",    v: "staff" }
-        - { k: "unix_sock_rw_perms", v: "0770" }
-        - { k: "auth_unix_rw",       v: "none" }
-      become: true
-      notify: restart libvirtd
+    - name: Tap into cirruslabs repo
+      community.general.homebrew_tap:
+        name: cirruslabs/cli
+        state: present
 
-    - name: Check default pool state
-      ansible.builtin.command: virsh -c qemu:///system pool-info default
-      environment: {PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"}
-      register: pool_info
-      changed_when: false
-      failed_when: false
+    - name: Trust cirruslabs formula
+      ansible.builtin.command: brew trust cirruslabs/cli
 
-    - name: Define & build default pool (if doesn't exist)
-      ansible.builtin.command: "{{ item }}" 
-      environment: {PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"}
-      loop: 
-        - virsh -c qemu:///system pool-define-as default dir --target /opt/homebrew/var/lib/libvirt/images/
-        - virsh -c qemu:///system pool-build default
-      when: pool_info.rc != 0
-
-    - name: Start the pool (only if not already running)
-      ansible.builtin.command: virsh -c qemu:///system pool-start default
-      environment: {PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"}
-      when: "'running' not in pool_info.stdout | lower"
-
-    - name: Ensure autostart
-      ansible.builtin.command: virsh -c qemu:///system pool-autostart default
-      environment: {PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"}
-      changed_when: false
-
-  handlers:
-    - name: restart libvirtd
-      ansible.builtin.command: killall libvirtd 
-      become: true
+    - name: Install tart & orchard
+      community.general.homebrew:
+        name: [cirruslabs/cli/tart, cirruslabs/cli/orchard]
+        state: present
