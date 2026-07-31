@@ -11,7 +11,7 @@
         <string>run</string>
         <string>--user</string><string>{{ macos_user }}</string>
         <string>--bootstrap-token</string><string>{{ worker_bootstrap_token }}</string>
-        <string>127.0.0.1:6120</string>   {# ⚠️ insecure controller may need http:// or an insecure flag — confirm #}
+        <string>http://127.0.0.1:6120</string>   {# ⚠️ insecure controller may need http:// or an insecure flag — confirm #}
     </array>
     <key>EnvironmentVariables</key>
     <dict>
