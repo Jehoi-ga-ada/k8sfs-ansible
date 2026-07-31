@@ -10,6 +10,7 @@
         <string>worker</string>
         <string>run</string>
         <string>--user</string><string>{{ macos_user }}</string>
+        <string>--resources</string><string>org.cirruslabs.tart-vms={{ orchard_worker_vm_slots }}</string>
         <string>--bootstrap-token</string><string>{{ worker_bootstrap_token }}</string>
         <string>http://127.0.0.1:6120</string>   {# ⚠️ insecure controller may need http:// or an insecure flag — confirm #}
     </array>

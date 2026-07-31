@@ -14,6 +14,7 @@
       ORCHARD_URL: "http://127.0.0.1:6120"
       ORCHARD_SERVICE_ACCOUNT_NAME: "{{ orchard_admin_account }}"
       ORCHARD_SERVICE_ACCOUNT_TOKEN: "{{ orchard_bootstrap_admin_token }}"
+    orchard_worker_vm_slots: 6
   environment:
     PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}" 
   roles:
@@ -84,19 +85,13 @@
       changed_when: false
 
     - name: Create terraform service account
-      ansible.builtin.command: orchard create service-account terraform --roles compute:read --roles compute:write
+      ansible.builtin.command: orchard create service-account terraform --token {{orchard_terraform_token}} --roles compute:read --roles compute:write
       environment: "{{ orchard_admin_env }}"
       register: sa_tf
       changed_when: "'already exists' not in (sa_tf.stdout + sa_tf.stderr)"
       failed_when:
         - sa_tf.rc != 0
         - "'already exists' not in (sa_tf.stdout + sa_tf.stderr)"
-
-    - name: Get terraform token
-      ansible.builtin.command: orchard get bootstrap-token terraform
-      environment: "{{ orchard_admin_env }}"
-      register: tf_token
-      changed_when: false
 
     - name: Template the worker LaunchDaemon
       ansible.builtin.template:
@@ -116,6 +111,10 @@
       become: true
       changed_when: false
 
+    - name: Pre-pull base image
+      ansible.builtin.command: tart pull ghcr.io/cirruslabs/debian:latest
+      changed_when: false
+
     - name: Confirm worker joined
       ansible.builtin.command: orchard list workers
       environment: "{{ orchard_admin_env }}"
@@ -126,4 +125,4 @@
       ansible.builtin.debug:
         msg:
           - "workers:\n{{ workers.stdout }}"
-          - "Mac A → url=http://{{ ansible_host | default(inventory_hostname) }}:6120  name=terraform  token={{ tf_token.stdout }}"
+          - "Mac A → url=http://{{ ansible_host | default(inventory_hostname) }}:6120  name=terraform  token={{ orchard_terraform_token }}"
