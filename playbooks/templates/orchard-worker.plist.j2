@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{{ orchard_worker_label }}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/orchard</string>
+        <string>worker</string>
+        <string>run</string>
+        <string>--user</string><string>{{ macos_user }}</string>
+        <string>--bootstrap-token</string><string>{{ worker_bootstrap_token }}</string>
+        <string>127.0.0.1:6120</string>   {# ⚠️ insecure controller may need http:// or an insecure flag — confirm #}
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/var/root</string>
+        <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <key>RunAtLoad</key><true/>
+    <key>KeepAlive</key><true/>
+    <key>StandardOutPath</key><string>{{ orchard_log_dir }}/worker.out.log</string>
+    <key>StandardErrorPath</key><string>{{ orchard_log_dir }}/worker.err.log</string>
+</dict>
+</plist>
