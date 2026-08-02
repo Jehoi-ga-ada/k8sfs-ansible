@@ -1,0 +1,34 @@
+---
+- name: Setup vpn for macos user
+  hosts: macos
+  vars_files:
+    - ./vars/secrets.yml
+  environment:
+    PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"
+  tasks:
+    - name: Installing tailscale vpn
+      community.general.homebrew:
+        name: tailscale
+        state: present
+
+    - name: Install tailscale system daemon (launchd)
+      ansible.builtin.command:
+        cmd: tailscaled install-system-daemon
+        creates: /Library/LaunchDaemons/com.tailscale.tailscaled.plist
+      become: true
+
+    - name: Checking tailscale connection state
+      ansible.builtin.command: tailscale status --json
+      become: true
+      register: ts_status
+      changed_when: false
+      failed_when: false
+
+    - name: Bring tailscale up with auth key
+      ansible.builtin.command: tailscale up --authkey={{ tailscale_authkey }} --hostname=pg-mac
+      become: true
+      when: '''"BackendState":"Running"'' not in ts_status.stdout'
+
+    - name: Setup SSH
+      ansible.builtin.command: tailscale set --ssh
+      become: true
