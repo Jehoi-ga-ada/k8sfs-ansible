@@ -15,10 +15,10 @@
       ORCHARD_SERVICE_ACCOUNT_NAME: "{{ orchard_admin_account }}"
       ORCHARD_SERVICE_ACCOUNT_TOKEN: "{{ orchard_bootstrap_admin_token }}"
     orchard_worker_vm_slots: 6
+  roles: 
+    - geerlingguy.mac.homebrew
   environment:
     PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}" 
-  roles:
-    - geerlingguy.mac.homebrew
   tasks:
     - name: Add brew to PATH for shells
       ansible.builtin.lineinfile:

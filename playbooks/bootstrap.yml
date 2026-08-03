@@ -25,6 +25,8 @@
   hosts: jeho-mac
   vars_files:
     - ./vars/secrets.yml
+  roles:
+    - geerlingguy.mac.homebrew
   environment:
     PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"
   tasks:
