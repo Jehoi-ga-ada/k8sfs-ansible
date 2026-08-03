@@ -21,7 +21,36 @@
         mode: '0440'
         validate: '/usr/sbin/visudo -cf %s'
 
-    - name: Install SSH public key for the new user
-      ansible.posix.authorized_key:
-        user: "{{ username }}"
-        key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/ansible.pub') }}"
+- name: Setup vpn for macos user
+  hosts: jeho-mac
+  vars_files:
+    - ./vars/secrets.yml
+  environment:
+    PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"
+  tasks:
+    - name: Installing tailscale vpn
+      community.general.homebrew:
+        name: tailscale
+        state: present
+
+    - name: Install tailscale system daemon (launchd)
+      ansible.builtin.command:
+        cmd: tailscaled install-system-daemon
+        creates: /Library/LaunchDaemons/com.tailscale.tailscaled.plist
+      become: true
+
+    - name: Checking tailscale connection state
+      ansible.builtin.command: tailscale status --json
+      become: true
+      register: ts_status
+      changed_when: false
+      failed_when: false
+
+    - name: Bring tailscale up with auth key
+      ansible.builtin.command: tailscale up --authkey={{ tailscale_authkey }} --hostname=pg-mac
+      become: true
+      when: (ts_status.stdout | from_json).BackendState != "Running"
+
+    - name: Setup SSH
+      ansible.builtin.command: tailscale set --ssh
+      become: true
