@@ -1,0 +1,18 @@
+---
+- name: Install the cirruslabs CLI tools
+  environment:
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+  block:
+    - name: Tap into cirruslabs repo
+      community.general.homebrew_tap:
+        name: cirruslabs/cli
+        state: present
+
+    - name: Trust cirruslabs formula
+      ansible.builtin.command: brew trust cirruslabs/cli
+      changed_when: false
+
+    - name: Install tart & orchard
+      community.general.homebrew:
+        name: [cirruslabs/cli/tart, cirruslabs/cli/orchard]
+        state: present

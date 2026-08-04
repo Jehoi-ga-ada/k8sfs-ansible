@@ -1,0 +1,66 @@
+---
+- name: Ensure log dir exists
+  ansible.builtin.file:
+    path: "{{ orchard_log_dir }}"
+    state: directory
+    mode: "0755"
+  become: true
+
+- name: Template the controller LaunchDaemon
+  ansible.builtin.template:
+    src: orchard-controller.plist.j2
+    dest: "/Library/LaunchDaemons/{{ orchard_controller_label }}.plist"
+    owner: root
+    group: wheel
+    mode: "0644"
+  become: true
+  notify: Reload orchard controller
+
+- name: Check whether the controller daemon is loaded
+  ansible.builtin.command: launchctl print system/{{ orchard_controller_label }}
+  become: true
+  register: orchard_controller_loaded
+  changed_when: orchard_controller_loaded.rc != 0
+  failed_when: false
+  notify: Reload orchard controller
+
+- name: Load the controller before talking to it
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for the controller API
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ orchard_port }}"
+    timeout: 60
+
+- name: Create worker service account
+  ansible.builtin.command: orchard create service-account worker-pool --roles compute:read --roles compute:write
+  environment: "{{ orchard_admin_env }}"
+  register: sa_worker
+  changed_when: "'already exists' not in (sa_worker.stdout + sa_worker.stderr)"
+  failed_when:
+    - sa_worker.rc != 0
+    - "'already exists' not in (sa_worker.stdout + sa_worker.stderr)"
+
+- name: Create terraform service account
+  ansible.builtin.command: >-
+    orchard create service-account terraform
+    --token {{ orchard_terraform_token }}
+    --roles compute:read --roles compute:write
+  environment: "{{ orchard_admin_env }}"
+  register: sa_tf
+  no_log: true
+  changed_when: "'already exists' not in (sa_tf.stdout + sa_tf.stderr)"
+  failed_when:
+    - sa_tf.rc != 0
+    - "'already exists' not in (sa_tf.stdout + sa_tf.stderr)"
+
+- name: Get worker bootstrap token
+  ansible.builtin.command: orchard get bootstrap-token worker-pool
+  environment: "{{ orchard_admin_env }}"
+  register: worker_token
+  changed_when: false
+
+- name: Publish the worker bootstrap token to other hosts
+  ansible.builtin.set_fact:
+    orchard_worker_bootstrap_token: "{{ worker_token.stdout | trim }}"

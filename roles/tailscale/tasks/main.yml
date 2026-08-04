@@ -1,0 +1,37 @@
+---
+- name: Set up the tailscale vpn
+  environment:
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+  block:
+    - name: Installing tailscale vpn
+      community.general.homebrew:
+        name: tailscale
+        state: present
+
+    - name: Install tailscale system daemon (launchd)
+      ansible.builtin.command:
+        cmd: tailscaled install-system-daemon
+        creates: /Library/LaunchDaemons/com.tailscale.tailscaled.plist
+      become: true
+
+    - name: Checking tailscale connection state
+      ansible.builtin.command: tailscale status --json
+      become: true
+      register: ts_status
+      changed_when: false
+      failed_when: false
+
+    - name: Bring tailscale up with auth key
+      ansible.builtin.command: >-
+        tailscale up
+        --authkey={{ tailscale_authkey }}
+        --hostname={{ tailscale_hostname }}
+      become: true
+      no_log: true
+      when: (ts_status.stdout | default('{}', true) | from_json).BackendState | default('') != "Running"
+
+    - name: Setup SSH
+      ansible.builtin.command: tailscale set --ssh
+      become: true
+      changed_when: false
+      when: tailscale_enable_ssh

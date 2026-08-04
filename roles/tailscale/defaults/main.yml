@@ -1,0 +1,3 @@
+---
+tailscale_hostname: "{{ inventory_hostname }}"
+tailscale_enable_ssh: true

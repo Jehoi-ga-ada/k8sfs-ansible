@@ -1,0 +1,7 @@
+---
+orchard_worker_label: org.cirruslabs.orchard.worker
+orchard_worker_user: "{{ ansible_user }}"
+orchard_worker_vm_slots: 6
+orchard_worker_images:
+  - ghcr.io/cirruslabs/debian:latest
+orchard_worker_bootstrap_token: "{{ hostvars[orchard_controller_host].orchard_worker_bootstrap_token | default('') }}"

@@ -1,128 +1,23 @@
 ---
-- name: Prerequisite for VM terraforming
-  hosts: macos
-  vars_files:
-    - ./vars/secrets.yml
-  vars:
-    macos_user: "{{ ansible_user }}"
-    orchard_admin_account: "bootstrap-admin"
-    orchard_log_dir: "/opt/homebrew/var/log"
-    orchard_controller_label: "org.cirruslabs.orchard.controller"
-    orchard_worker_label: "org.cirruslabs.orchard.worker"
-    orchard_admin_env:
-      PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"
-      ORCHARD_URL: "http://127.0.0.1:6120"
-      ORCHARD_SERVICE_ACCOUNT_NAME: "{{ orchard_admin_account }}"
-      ORCHARD_SERVICE_ACCOUNT_TOKEN: "{{ orchard_bootstrap_admin_token }}"
-    orchard_worker_vm_slots: 6
-  roles: 
-    - geerlingguy.mac.homebrew
-  environment:
-    PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}" 
+- name: Run the orchard controller
+  hosts: orchard_controller
+  roles:
+    - role: orchard_controller
+
+- name: Run the orchard workers
+  hosts: orchard_workers
+  roles:
+    - role: orchard_worker
   tasks:
-    - name: Add brew to PATH for shells
-      ansible.builtin.lineinfile:
-        path: "{{ ansible_user_dir }}/.zshenv"
-        line: 'eval "$(/opt/homebrew/bin/brew shellenv)"'
-        create: true
-
-    - name: Tap into cirruslabs repo
-      community.general.homebrew_tap:
-        name: cirruslabs/cli
-        state: present
-
-    - name: Trust cirruslabs formula
-      ansible.builtin.command: brew trust cirruslabs/cli
-      changed_when: false
-
-    - name: Install tart & orchard
-      community.general.homebrew:
-        name: [cirruslabs/cli/tart, cirruslabs/cli/orchard]
-        state: present
-
-    - name: Ensure log dir exists
-      ansible.builtin.file:
-        path: "{{ orchard_log_dir }}"
-        state: directory
-        mode: "0755"
-      become: true
-
-    - name: Template the controller LaunchDaemon
-      ansible.builtin.template:
-        src: ./templates/orchard-controller.plist.j2
-        dest: "/Library/LaunchDaemons/{{ orchard_controller_label }}.plist"
-        owner: root
-        group: wheel
-        mode: "0644"
-      become: true
-
-    - name: Load the controller service (idempotent)
-      ansible.builtin.shell: |
-        launchctl bootout system /Library/LaunchDaemons/{{ orchard_controller_label }}.plist 2>/dev/null || true
-        launchctl bootstrap system /Library/LaunchDaemons/{{ orchard_controller_label }}.plist
-      become: true
-      changed_when: false
-
-    - name: Wait for the controller API
-      ansible.builtin.wait_for:
-        host: 127.0.0.1
-        port: 6120
-        timeout: 60
-
-    - name: Create worker service account
-      ansible.builtin.command: orchard create service-account worker-pool --roles compute:read --roles compute:write
-      environment: "{{ orchard_admin_env }}"
-      register: sa_worker
-      changed_when: "'already exists' not in (sa_worker.stdout + sa_worker.stderr)"
-      failed_when:
-        - sa_worker.rc != 0
-        - "'already exists' not in (sa_worker.stdout + sa_worker.stderr)"
-    
-    - name: Get worker bootstrap token
-      ansible.builtin.command: orchard get bootstrap-token worker-pool
-      environment: "{{ orchard_admin_env }}"
-      register: worker_token
-      changed_when: false
-
-    - name: Create terraform service account
-      ansible.builtin.command: orchard create service-account terraform --token {{orchard_terraform_token}} --roles compute:read --roles compute:write
-      environment: "{{ orchard_admin_env }}"
-      register: sa_tf
-      changed_when: "'already exists' not in (sa_tf.stdout + sa_tf.stderr)"
-      failed_when:
-        - sa_tf.rc != 0
-        - "'already exists' not in (sa_tf.stdout + sa_tf.stderr)"
-
-    - name: Template the worker LaunchDaemon
-      ansible.builtin.template:
-        src: ./templates/orchard-worker.plist.j2
-        dest: "/Library/LaunchDaemons/{{ orchard_worker_label }}.plist"
-        owner: root
-        group: wheel
-        mode: "0644"
-      become: true
-      vars:
-        worker_bootstrap_token: "{{ worker_token.stdout }}"
-
-    - name: Load the worker service
-      ansible.builtin.shell: |
-        launchctl bootout system /Library/LaunchDaemons/{{ orchard_worker_label }}.plist 2>/dev/null || true
-        launchctl bootstrap system /Library/LaunchDaemons/{{ orchard_worker_label }}.plist
-      become: true
-      changed_when: false
-
-    - name: Pre-pull base image
-      ansible.builtin.command: tart pull ghcr.io/cirruslabs/debian:latest
-      changed_when: false
-
     - name: Confirm worker joined
       ansible.builtin.command: orchard list workers
       environment: "{{ orchard_admin_env }}"
+      delegate_to: "{{ orchard_controller_host }}"
       register: workers
       changed_when: false
 
-    - name: Print worker list + Mac Local connection info
+    - name: Print worker list + terraform connection info
       ansible.builtin.debug:
         msg:
           - "workers:\n{{ workers.stdout }}"
-          - "Mac A → url=http://{{ ansible_host | default(inventory_hostname) }}:6120  name=terraform  token={{ orchard_terraform_token }}"
+          - "terraform → url={{ orchard_controller_url }}  name=terraform  token={{ orchard_terraform_token }}"

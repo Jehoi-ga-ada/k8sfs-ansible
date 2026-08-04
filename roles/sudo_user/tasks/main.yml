@@ -1,0 +1,23 @@
+---
+- name: Assert a username was given
+  ansible.builtin.assert:
+    that: sudo_user_name | default('') | trim | length > 0
+    fail_msg: "sudo_user_name must be set to the account to create"
+
+- name: Create new system user
+  ansible.builtin.user:
+    name: "{{ sudo_user_name }}"
+    shell: "{{ sudo_user_shell }}"
+    create_home: true
+    state: present
+  become: true
+
+- name: Configure passwordless sudo privileges
+  ansible.builtin.copy:
+    content: "{{ sudo_user_name }} ALL=(ALL) NOPASSWD: ALL\n"
+    dest: "/etc/sudoers.d/{{ sudo_user_name }}"
+    owner: root
+    group: "{{ sudo_user_group }}"
+    mode: "0440"
+    validate: "/usr/sbin/visudo -cf %s"
+  become: true

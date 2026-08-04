@@ -6,19 +6,19 @@
     <string>{{ orchard_worker_label }}</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/opt/homebrew/bin/orchard</string>
+        <string>{{ homebrew_prefix }}/bin/orchard</string>
         <string>worker</string>
         <string>run</string>
-        <string>--user</string><string>{{ macos_user }}</string>
+        <string>--user</string><string>{{ orchard_worker_user }}</string>
         <string>--resources</string><string>org.cirruslabs.tart-vms={{ orchard_worker_vm_slots }}</string>
-        <string>--bootstrap-token</string><string>{{ worker_bootstrap_token }}</string>
-        <string>http://127.0.0.1:6120</string>   {# ⚠️ insecure controller may need http:// or an insecure flag — confirm #}
+        <string>--bootstrap-token</string><string>{{ orchard_worker_bootstrap_token }}</string>
+        <string>{{ orchard_controller_url }}</string>
     </array>
     <key>EnvironmentVariables</key>
     <dict>
         <key>HOME</key>
         <string>/var/root</string>
-        <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>PATH</key><string>{{ homebrew_prefix }}/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
     <key>RunAtLoad</key><true/>
     <key>KeepAlive</key><true/>

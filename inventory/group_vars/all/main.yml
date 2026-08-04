@@ -1,0 +1,10 @@
+---
+orchard_port: 6120
+orchard_controller_host: macos
+orchard_controller_url: "http://{{ hostvars[orchard_controller_host].ansible_host }}:{{ orchard_port }}"
+orchard_admin_account: bootstrap-admin
+orchard_admin_env:
+  PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+  ORCHARD_URL: "http://127.0.0.1:{{ orchard_port }}"
+  ORCHARD_SERVICE_ACCOUNT_NAME: "{{ orchard_admin_account }}"
+  ORCHARD_SERVICE_ACCOUNT_TOKEN: "{{ orchard_bootstrap_admin_token }}"

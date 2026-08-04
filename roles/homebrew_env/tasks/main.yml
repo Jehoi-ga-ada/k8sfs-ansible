@@ -1,0 +1,17 @@
+---
+- name: Check for an existing brew binary
+  ansible.builtin.stat:
+    path: "{{ homebrew_prefix }}/bin/brew"
+  register: homebrew_env_brew_bin
+
+- name: Ensure Homebrew is installed
+  ansible.builtin.include_role:
+    name: geerlingguy.mac.homebrew
+  when: not homebrew_env_brew_bin.stat.exists
+
+- name: Add brew to PATH for shells
+  ansible.builtin.lineinfile:
+    path: "{{ homebrew_env_shell_profile }}"
+    line: 'eval "$({{ homebrew_prefix }}/bin/brew shellenv)"'
+    create: true
+    mode: "0644"

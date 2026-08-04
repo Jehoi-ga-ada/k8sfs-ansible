@@ -1,0 +1,2 @@
+---
+orchard_log_dir: "{{ homebrew_prefix }}/var/log"

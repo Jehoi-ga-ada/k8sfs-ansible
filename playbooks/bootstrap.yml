@@ -1,58 +1,8 @@
 ---
-- name: Create Passwordless Sudo User
+- name: Bootstrap a mac for the cluster
   hosts: jeho-mac
-  become: true
   roles:
-    - elliotweiser.osx-command-line-tools
-  tasks:
-    - name: Create new system user
-      ansible.builtin.user:
-        name: "{{ username }}"
-        shell: /bin/bash
-        create_home: true
-        state: present
-
-    - name: Configure passwordless sudo privileges
-      ansible.builtin.copy:
-        content: "{{ username }} ALL=(ALL) NOPASSWD: ALL\n"
-        dest: "/etc/sudoers.d/{{ username }}"
-        owner: root
-        group: wheel # mac os - use root for linux
-        mode: '0440'
-        validate: '/usr/sbin/visudo -cf %s'
-
-- name: Setup vpn for macos user
-  hosts: jeho-mac
-  vars_files:
-    - ./vars/secrets.yml
-  roles:
-    - geerlingguy.mac.homebrew
-  environment:
-    PATH: "/opt/homebrew/bin:{{ ansible_env.PATH }}"
-  tasks:
-    - name: Installing tailscale vpn
-      community.general.homebrew:
-        name: tailscale
-        state: present
-
-    - name: Install tailscale system daemon (launchd)
-      ansible.builtin.command:
-        cmd: tailscaled install-system-daemon
-        creates: /Library/LaunchDaemons/com.tailscale.tailscaled.plist
+    - role: elliotweiser.osx-command-line-tools
       become: true
-
-    - name: Checking tailscale connection state
-      ansible.builtin.command: tailscale status --json
-      become: true
-      register: ts_status
-      changed_when: false
-      failed_when: false
-
-    - name: Bring tailscale up with auth key
-      ansible.builtin.command: tailscale up --authkey={{ tailscale_authkey }} --hostname=pg-mac
-      become: true
-      when: (ts_status.stdout | from_json).BackendState != "Running"
-
-    - name: Setup SSH
-      ansible.builtin.command: tailscale set --ssh
-      become: true
+    - role: sudo_user
+    - role: tailscale

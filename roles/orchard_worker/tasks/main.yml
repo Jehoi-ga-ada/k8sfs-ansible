@@ -1,0 +1,44 @@
+---
+- name: Assert a worker bootstrap token is available
+  ansible.builtin.assert:
+    that: orchard_worker_bootstrap_token | trim | length > 0
+    fail_msg: >-
+      No worker bootstrap token for {{ inventory_hostname }}. Run the
+      orchard_controller play first, or pass
+      -e orchard_worker_bootstrap_token=<token>
+
+- name: Ensure log dir exists
+  ansible.builtin.file:
+    path: "{{ orchard_log_dir }}"
+    state: directory
+    mode: "0755"
+  become: true
+
+- name: Template the worker LaunchDaemon
+  ansible.builtin.template:
+    src: orchard-worker.plist.j2
+    dest: "/Library/LaunchDaemons/{{ orchard_worker_label }}.plist"
+    owner: root
+    group: wheel
+    mode: "0644"
+  become: true
+  no_log: true
+  notify: Reload orchard worker
+
+- name: Check whether the worker daemon is loaded
+  ansible.builtin.command: launchctl print system/{{ orchard_worker_label }}
+  become: true
+  register: orchard_worker_loaded
+  changed_when: orchard_worker_loaded.rc != 0
+  failed_when: false
+  notify: Reload orchard worker
+
+- name: Pre-pull base images
+  ansible.builtin.command: tart pull {{ item }}
+  environment:
+    PATH: "{{ homebrew_prefix }}/bin:{{ ansible_env.PATH }}"
+  loop: "{{ orchard_worker_images }}"
+  changed_when: false
+
+- name: Load the worker service
+  ansible.builtin.meta: flush_handlers

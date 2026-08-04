@@ -1,0 +1,7 @@
+---
+- name: Reload orchard worker
+  ansible.builtin.shell: |
+    launchctl bootout system /Library/LaunchDaemons/{{ orchard_worker_label }}.plist 2>/dev/null || true
+    launchctl bootstrap system /Library/LaunchDaemons/{{ orchard_worker_label }}.plist
+  become: true
+  changed_when: true
