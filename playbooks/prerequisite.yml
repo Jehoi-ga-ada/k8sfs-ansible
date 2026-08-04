@@ -20,4 +20,4 @@
       ansible.builtin.debug:
         msg:
           - "workers:\n{{ workers.stdout }}"
-          - "terraform → url={{ orchard_controller_url }}  name=terraform  token={{ orchard_terraform_token }}"
+          - "terraform → url=http://{{ hostvars[orchard_controller_host].ansible_host }}:{{ orchard_port }}  name=terraform  token={{ orchard_terraform_token }}"
