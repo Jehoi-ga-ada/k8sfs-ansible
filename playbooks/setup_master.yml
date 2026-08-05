@@ -1,0 +1,42 @@
+---
+- name: Generate keypair on master-1
+  hosts: master-1
+  tasks:
+    - name: Ensure ~/.ssh exists
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.ssh"
+        state: directory
+        mode: "0700"
+
+    - name: Create ed25519 keypair (idempotent)
+      community.crypto.openssh_keypair:
+        path: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
+        type: ed25519
+      register: master1_key
+
+- name: Authorize master-1's public key on all other nodes
+  hosts: all:!master-1
+  tasks:
+    - name: Add master-1 pubkey to authorized_keys
+      ansible.posix.authorized_key:
+        user: "{{ ansible_user }}"
+        state: present
+        key: "{{ hostvars['master-1'].master1_key.public_key }}"
+
+- name: Setup kubectl
+  hosts: master-1
+  tasks:
+    - name: Download kubectl
+      ansible.builtin.get_url:
+        url: https://dl.k8s.io/release/v1.36.0/bin/linux/arm64/kubectl
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
+      become: true
+
+    - name: Check kubectl is working
+      ansible.builtin.command: kubectl version --client
+      register: kubectl
+      changed_when: false
+
+    - name: Kubectl version
+      ansible.builtin.debug: msg="{{ kubectl.stdout }}"
