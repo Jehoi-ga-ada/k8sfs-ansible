@@ -2,3 +2,4 @@
 ansible_user: admin
 ansible_ssh_private_key_file: ~/.ssh/ansible
 ansible_python_interpreter: /usr/bin/python3
+ansible_ssh_common_args: '-o ProxyJump=macos@100.126.151.59'
