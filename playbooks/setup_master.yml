@@ -40,3 +40,138 @@
 
     - name: Kubectl version
       ansible.builtin.debug: msg="{{ kubectl.stdout }}"
+
+- name: Setup TLS
+  hosts: master-1
+  become: true
+  tasks:
+    - name: Ensure csr dir exist
+      ansible.builtin.file:
+        path: /etc/ssl/csr
+        state: directory
+        mode: '0755'
+
+    - name: Ensure certs dir exist
+      ansible.builtin.file:
+        path: /etc/ssl/certs
+        state: directory
+        mode: '0755'
+
+    - name: Create private key for CA
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/ca.key
+        size: 2048
+
+    - name: Create CSR for CA
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/ca.csr
+        privatekey_path: /etc/ssl/private/ca.key
+        common_name: KUBERNETES-CA
+
+    - name: Sign CSR as a self-signed certificate
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/ca.crt
+        csr_path: /etc/ssl/csr/ca.csr
+        privatekey_path: /etc/ssl/private/ca.key
+        provider: selfsigned
+        selfsigned_not_after: "+3650d"
+
+    - name: Create private key for admin user
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/admin.key
+        size: 2048
+
+    - name: Create CSR for admin user
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/admin.csr
+        privatekey_path: /etc/ssl/private/admin.key
+        common_name: ADMIN
+        organization_name: system:masters
+
+    - name: Sign CSR for admin using CA server private key
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/admin.crt
+        csr_path: /etc/ssl/csr/admin.csr
+        ownca_path: /etc/ssl/certs/ca.crt
+        ownca_privatekey_path: /etc/ssl/private/ca.key
+        provider: ownca
+
+    - name: Create private key for controller manager
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/kube-controller-manager.key
+        size: 2048
+
+    - name: Create CSR for controller manager
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/kube-controller-manager.csr
+        privatekey_path: /etc/ssl/private/kube-controller-manager.key
+        common_name: kube-controller-manager
+        organization_name: system:masters
+
+    - name: Sign CSR for controller manager using CA server private key
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/kube-controller-manager.crt
+        csr_path: /etc/ssl/csr/kube-controller-manager.csr
+        ownca_path: /etc/ssl/certs/ca.crt
+        ownca_privatekey_path: /etc/ssl/private/ca.key
+        provider: ownca
+
+    - name: Create private key for kube proxy
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/kube-proxy.key
+        size: 2048
+
+    - name: Create CSR for kube proxy
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/kube-proxy.csr
+        privatekey_path: /etc/ssl/private/kube-proxy.key
+        common_name: kube-proxy
+        organization_name: system:masters
+
+    - name: Sign CSR for kube proxy using CA server private key
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/kube-proxy.crt
+        csr_path: /etc/ssl/csr/kube-proxy.csr
+        ownca_path: /etc/ssl/certs/ca.crt
+        ownca_privatekey_path: /etc/ssl/private/ca.key
+        provider: ownca
+
+    - name: Create private key for kube scheduler
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/kube-scheduler.key
+        size: 2048
+
+    - name: Create CSR for kube scheduler
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/kube-scheduler.csr
+        privatekey_path: /etc/ssl/private/kube-scheduler.key
+        common_name: kube-scheduler
+        organization_name: system:masters
+
+    - name: Sign CSR for kube scheduler using CA server private key
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/kube-scheduler.crt
+        csr_path: /etc/ssl/csr/kube-scheduler.csr
+        ownca_path: /etc/ssl/certs/ca.crt
+        ownca_privatekey_path: /etc/ssl/private/ca.key
+        provider: ownca
+
+    - name: Create private key for kube proxy
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/kube-proxy.key
+        size: 2048
+
+    - name: Create CSR for kube proxy
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/kube-proxy.csr
+        privatekey_path: /etc/ssl/private/kube-proxy.key
+        common_name: kube-proxy
+        organization_name: system:masters
+
+    - name: Sign CSR for kube proxy using CA server private key
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/kube-proxy.crt
+        csr_path: /etc/ssl/csr/kube-proxy.csr
+        ownca_path: /etc/ssl/certs/ca.crt
+        ownca_privatekey_path: /etc/ssl/private/ca.key
+        provider: ownca
