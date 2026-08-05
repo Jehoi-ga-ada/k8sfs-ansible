@@ -1,0 +1,9 @@
+---
+k8s:
+  children:
+    master:
+    worker:
+    lb:
+control_plane:
+  children:
+    master:
