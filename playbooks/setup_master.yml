@@ -106,7 +106,7 @@
         path: /etc/ssl/csr/kube-controller-manager.csr
         privatekey_path: /etc/ssl/private/kube-controller-manager.key
         common_name: kube-controller-manager
-        organization_name: system:masters
+        organization_name: system:kube-controller-manager
 
     - name: Sign CSR for controller manager using CA server private key
       community.crypto.x509_certificate:
@@ -126,7 +126,7 @@
         path: /etc/ssl/csr/kube-proxy.csr
         privatekey_path: /etc/ssl/private/kube-proxy.key
         common_name: kube-proxy
-        organization_name: system:masters
+        organization_name: system:node-proxier
 
     - name: Sign CSR for kube proxy using CA server private key
       community.crypto.x509_certificate:
@@ -146,32 +146,12 @@
         path: /etc/ssl/csr/kube-scheduler.csr
         privatekey_path: /etc/ssl/private/kube-scheduler.key
         common_name: kube-scheduler
-        organization_name: system:masters
+        organization_name: system:kube-scheduler
 
     - name: Sign CSR for kube scheduler using CA server private key
       community.crypto.x509_certificate:
         path: /etc/ssl/certs/kube-scheduler.crt
         csr_path: /etc/ssl/csr/kube-scheduler.csr
-        ownca_path: /etc/ssl/certs/ca.crt
-        ownca_privatekey_path: /etc/ssl/private/ca.key
-        provider: ownca
-
-    - name: Create private key for kube proxy
-      community.crypto.openssl_privatekey:
-        path: /etc/ssl/private/kube-proxy.key
-        size: 2048
-
-    - name: Create CSR for kube proxy
-      community.crypto.openssl_csr:
-        path: /etc/ssl/csr/kube-proxy.csr
-        privatekey_path: /etc/ssl/private/kube-proxy.key
-        common_name: kube-proxy
-        organization_name: system:masters
-
-    - name: Sign CSR for kube proxy using CA server private key
-      community.crypto.x509_certificate:
-        path: /etc/ssl/certs/kube-proxy.crt
-        csr_path: /etc/ssl/csr/kube-proxy.csr
         ownca_path: /etc/ssl/certs/ca.crt
         ownca_privatekey_path: /etc/ssl/private/ca.key
         provider: ownca
