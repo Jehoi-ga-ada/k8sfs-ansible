@@ -113,3 +113,128 @@
         ownca_path: /etc/ssl/certs/ca.crt
         ownca_privatekey_path: /etc/ssl/private/ca.key
         provider: ownca
+      
+    - name: Create private key for kube apiserver
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/kube-apiserver.key
+        size: 2048
+
+    - name: Create CSR for kube apiserver
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/kube-apiserver.csr
+        privatekey_path: /etc/ssl/private/kube-apiserver.key
+        common_name: kube-apiserver
+        organization_name: Kubernetes
+        basic_constraints:
+          - "CA:FALSE"
+        basic_constraints_critical: true
+        key_usage:
+          - nonRepudiation 
+          - digitalSignature
+          - keyEncipherment
+        key_usage_critical: true
+        extended_key_usage:
+          - serverAuth
+        subject_alt_name:
+          - "DNS:kubernetes"
+          - "DNS:kubernetes.default"
+          - "DNS:kubernetes.default.svc"
+          - "DNS:kubernetes.default.svc.cluster"
+          - "DNS:kubernetes.default.svc.cluster.local"
+          - "IP:10.96.0.1"
+          - "IP:{{ hostvars['master-1'].ansible_host }}"
+          - "IP:{{ hostvars['master-2'].ansible_host }}"
+          - "IP:{{ hostvars['lb-1'].ansible_host }}"
+          - "IP:127.0.0.1"
+
+    - name: Sign CSR for kube apiserver using CA server private key
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/kube-apiserver.crt
+        csr_path: /etc/ssl/csr/kube-apiserver.csr
+        ownca_path: /etc/ssl/certs/ca.crt
+        ownca_privatekey_path: /etc/ssl/private/ca.key
+        provider: ownca
+
+    - name: Create private key for apiserver-kubelet-client
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/apiserver-kubelet-client.key
+        size: 2048
+
+    - name: Create CSR for apiserver-kubelet-client
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/apiserver-kubelet-client.csr
+        privatekey_path: /etc/ssl/private/apiserver-kubelet-client.key
+        common_name: kube-apiserver-kubelet-client
+        organization_name: system:masters
+        basic_constraints:
+          - "CA:FALSE"
+        basic_constraints_critical: true
+        key_usage:
+          - nonRepudiation 
+          - digitalSignature
+          - keyEncipherment
+        key_usage_critical: true
+        extended_key_usage:
+          - clientAuth
+
+    - name: Sign CSR for apiserver-kubelet-client using CA server private key
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/apiserver-kubelet-client.crt
+        csr_path: /etc/ssl/csr/apiserver-kubelet-client.csr
+        ownca_path: /etc/ssl/certs/ca.crt
+        ownca_privatekey_path: /etc/ssl/private/ca.key
+        provider: ownca
+
+    - name: Create private key for etcd-server
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/etcd-server.key
+        size: 2048
+
+    - name: Create CSR for etcd-server
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/etcd-server.csr
+        privatekey_path: /etc/ssl/private/etcd-server.key
+        common_name: etcd-server
+        organization_name: Kubernetes
+        basic_constraints:
+          - "CA:FALSE"
+        basic_constraints_critical: true
+        key_usage:
+          - nonRepudiation 
+          - digitalSignature
+          - keyEncipherment
+        key_usage_critical: true
+        extended_key_usage:
+          - serverAuth
+        subject_alt_name:
+          - "IP:{{ hostvars['master-1'].ansible_host }}"
+          - "IP:{{ hostvars['master-2'].ansible_host }}"
+          - "IP:127.0.0.1"
+
+    - name: Sign CSR for etcd-server using CA server private key
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/etcd-server.crt
+        csr_path: /etc/ssl/csr/etcd-server.csr
+        ownca_path: /etc/ssl/certs/ca.crt
+        ownca_privatekey_path: /etc/ssl/private/ca.key
+        provider: ownca
+        
+    - name: Create private key for service account
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/service-account.key
+        size: 2048
+
+    - name: Create CSR for service account
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/service-account.csr
+        privatekey_path: /etc/ssl/private/service-account.key
+        common_name: service-account
+        organization_name: Kubernetes
+
+    - name: Sign CSR for service account using CA server private key
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/service-account.crt
+        csr_path: /etc/ssl/csr/service-account.csr
+        ownca_path: /etc/ssl/certs/ca.crt
+        ownca_privatekey_path: /etc/ssl/private/ca.key
+        provider: ownca
