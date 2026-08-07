@@ -1,0 +1,6 @@
+---
+- name: Setup kubernetes cluster
+  hosts: k8s
+  roles:
+    - cluster_ssh
+    - cluster_tls
