@@ -238,3 +238,43 @@
         ownca_path: /etc/ssl/certs/ca.crt
         ownca_privatekey_path: /etc/ssl/private/ca.key
         provider: ownca
+
+- name: Pull generated certs/keys to the controller
+  become: true
+  ansible.builtin.fetch:
+    src: "{{ item }}"
+    dest: "/tmp/k8s-certs{{ item }}"
+    flat: true
+  loop: "{{ control_plane_certs + (node_certs | difference(control_plane_certs)) }}"
+  when: inventory_hostname == master_node
+
+- name: Ensure SSL dirs exist on receivers
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/ssl/certs
+    - /etc/ssl/private
+  when: inventory_hostname != master_node
+
+- name: Distribute control-plane certs to secondary masters
+  become: true
+  ansible.builtin.copy:
+    src: "/tmp/k8s-certs{{ item }}"
+    dest: "{{ item }}"
+    mode: "{{ '0600' if item.endswith('.key') else '0644' }}"
+  loop: "{{ control_plane_certs }}"
+  when:
+    - inventory_hostname in groups['master']
+    - inventory_hostname != master_node
+
+- name: Distribute node certs to workers
+  become: true
+  ansible.builtin.copy:
+    src: "/tmp/k8s-certs{{ item }}"
+    dest: "{{ item }}"
+    mode: "{{ '0600' if item.endswith('.key') else '0644' }}"
+  loop: "{{ node_certs }}"
+  when: inventory_hostname in groups['worker']

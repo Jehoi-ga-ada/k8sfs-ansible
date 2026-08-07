@@ -1,0 +1,21 @@
+---
+control_plane_certs:
+  - /etc/ssl/certs/ca.crt
+  - /etc/ssl/private/ca.key
+  - /etc/ssl/private/kube-apiserver.key
+  - /etc/ssl/certs/kube-apiserver.crt
+  - /etc/ssl/private/apiserver-kubelet-client.key
+  - /etc/ssl/certs/apiserver-kubelet-client.crt
+  - /etc/ssl/private/service-account.key
+  - /etc/ssl/certs/service-account.crt
+  - /etc/ssl/private/etcd-server.key
+  - /etc/ssl/certs/etcd-server.crt
+  - /etc/ssl/private/kube-controller-manager.key
+  - /etc/ssl/certs/kube-controller-manager.crt
+  - /etc/ssl/private/kube-scheduler.key
+  - /etc/ssl/certs/kube-scheduler.crt
+
+node_certs:
+  - /etc/ssl/certs/ca.crt
+  - /etc/ssl/certs/kube-proxy.crt
+  - /etc/ssl/private/kube-proxy.key
