@@ -4,3 +4,4 @@
   roles:
     - cluster_ssh
     - cluster_tls
+    - cluster_config

@@ -1,0 +1,18 @@
+---
+kubeconfig_dir: /var/lib/kubernetes
+kube_proxy_dir: /var/lib/kube-proxy
+pki_dir: /var/lib/kubernetes/pki
+
+loadbalancer_ip: "{{ hostvars['lb-1'].ansible_host }}"
+
+admin_ca:   /etc/ssl/certs/ca.crt
+admin_cert: /etc/ssl/certs/admin.crt
+admin_key:  /etc/ssl/private/admin.key
+
+control_plane_kubeconfigs:
+  - admin.kubeconfig
+  - kube-controller-manager.kubeconfig
+  - kube-scheduler.kubeconfig
+
+node_kubeconfigs:
+  - kube-proxy.kubeconfig
