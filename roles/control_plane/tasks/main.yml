@@ -1,0 +1,79 @@
+---
+- name: Bootstrap the control plane
+  become: true
+  when: inventory_hostname in groups['master']
+  block:
+    - name: Install Kubernetes control plane binaries
+      ansible.builtin.get_url:
+        url: "{{ kube_release_url }}/{{ item }}"
+        dest: "/usr/local/bin/{{ item }}"
+        mode: '0755'
+      loop: "{{ kube_binaries }}"
+
+    - name: Secure kubeconfigs
+      ansible.builtin.file:
+        path: "{{ kubeconfig_dir }}/{{ item }}"
+        mode: '0600'
+      loop:
+        - admin.kubeconfig
+        - kube-controller-manager.kubeconfig
+        - kube-scheduler.kubeconfig
+
+    - name: Write control plane systemd units
+      ansible.builtin.template:
+        src: "{{ item }}.service.j2"
+        dest: "/etc/systemd/system/{{ item }}.service"
+        mode: '0644'
+      loop: "{{ control_plane_services }}"
+      notify: "Restart {{ item }}"
+
+    - name: Enable and start control plane services
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+        daemon_reload: true
+      loop: "{{ control_plane_services }}"
+
+- name: Configure the load balancer
+  become: true
+  when: inventory_hostname in groups['lb']
+  block:
+    - name: Install haproxy
+      ansible.builtin.apt:
+        name: haproxy
+        state: present
+        update_cache: true
+
+    - name: Write haproxy config
+      ansible.builtin.template:
+        src: haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+        mode: '0644'
+      notify: Restart haproxy
+
+    - name: Enable and start haproxy
+      ansible.builtin.systemd_service:
+        name: haproxy
+        state: started
+        enabled: true
+
+- name: Flush handlers before verification
+  ansible.builtin.meta: flush_handlers
+
+- name: Verify control plane components
+  become: true
+  ansible.builtin.command:
+    cmd: kubectl get componentstatuses --kubeconfig {{ kubeconfig_dir }}/admin.kubeconfig
+  register: component_statuses
+  until: component_statuses.rc == 0
+  retries: 10
+  delay: 5
+  changed_when: false
+  run_once: true
+  delegate_to: "{{ master_node }}"
+
+- name: Control plane components
+  ansible.builtin.debug:
+    msg: "{{ component_statuses.stdout_lines }}"
+  run_once: true

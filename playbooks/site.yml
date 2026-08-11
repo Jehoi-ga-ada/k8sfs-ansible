@@ -7,3 +7,4 @@
     - cluster_config
     - cluster_encryption
     - etcd
+    - control_plane
