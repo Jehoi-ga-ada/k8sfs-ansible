@@ -1,0 +1,4 @@
+---
+master_node: master-1
+etcd_version: "v3.5.9"
+etcd_arch: arm64

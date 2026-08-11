@@ -1,0 +1,65 @@
+---
+- name: Bootstrap etcd
+  become: true
+  when: inventory_hostname in groups['master']
+  block:
+    - name: Download and extract the etcd release
+      ansible.builtin.unarchive:
+        src: "{{ etcd_url }}"
+        dest: /tmp
+        remote_src: true
+        creates: "{{ etcd_release_dir }}/etcd"
+
+    - name: Install etcd binaries
+      ansible.builtin.copy:
+        src: "{{ etcd_release_dir }}/{{ item }}"
+        dest: "/usr/local/bin/{{ item }}"
+        remote_src: true
+        mode: '0755'
+      loop:
+        - etcd
+        - etcdctl
+
+    - name: Ensure etcd data dir exists
+      ansible.builtin.file:
+        path: "{{ etcd_data_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Write etcd systemd unit
+      ansible.builtin.template:
+        src: etcd.service.j2
+        dest: /etc/systemd/system/etcd.service
+        mode: '0644'
+      notify: Restart etcd
+
+    - name: Enable and start etcd
+      ansible.builtin.systemd_service:
+        name: etcd
+        state: started
+        enabled: true
+        daemon_reload: true
+
+- name: Verify etcd cluster members
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      etcdctl member list
+      --endpoints=https://127.0.0.1:{{ etcd_client_port }}
+      --cacert={{ etcd_ca }}
+      --cert={{ etcd_cert }}
+      --key={{ etcd_key }}
+  environment:
+    ETCDCTL_API: "3"
+  register: etcd_members
+  until: etcd_members.rc == 0
+  retries: 10
+  delay: 5
+  changed_when: false
+  run_once: true
+  delegate_to: "{{ master_node }}"
+
+- name: Etcd cluster members
+  ansible.builtin.debug:
+    msg: "{{ etcd_members.stdout_lines }}"
+  run_once: true

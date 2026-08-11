@@ -1,0 +1,28 @@
+[Unit]
+Description=etcd
+Documentation=https://github.com/etcd-io/etcd
+
+[Service]
+ExecStart=/usr/local/bin/etcd \
+  --name {{ inventory_hostname }} \
+  --cert-file={{ etcd_cert }} \
+  --key-file={{ etcd_key }} \
+  --peer-cert-file={{ etcd_cert }} \
+  --peer-key-file={{ etcd_key }} \
+  --trusted-ca-file={{ etcd_ca }} \
+  --peer-trusted-ca-file={{ etcd_ca }} \
+  --peer-client-cert-auth \
+  --client-cert-auth \
+  --initial-advertise-peer-urls https://{{ ansible_host }}:{{ etcd_peer_port }} \
+  --listen-peer-urls https://{{ ansible_host }}:{{ etcd_peer_port }} \
+  --listen-client-urls https://{{ ansible_host }}:{{ etcd_client_port }},https://127.0.0.1:{{ etcd_client_port }} \
+  --advertise-client-urls https://{{ ansible_host }}:{{ etcd_client_port }} \
+  --initial-cluster-token etcd-cluster-0 \
+  --initial-cluster {% for host in groups['master'] %}{{ host }}=https://{{ hostvars[host].ansible_host }}:{{ etcd_peer_port }}{% if not loop.last %},{% endif %}{% endfor %} \
+  --initial-cluster-state new \
+  --data-dir={{ etcd_data_dir }}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -6,3 +6,4 @@
     - cluster_tls
     - cluster_config
     - cluster_encryption
+    - etcd

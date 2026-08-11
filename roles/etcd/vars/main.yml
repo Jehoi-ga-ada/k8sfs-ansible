@@ -1,0 +1,14 @@
+---
+etcd_data_dir: /var/lib/etcd
+etcd_release_dir: "/tmp/etcd-{{ etcd_version }}-linux-{{ etcd_arch }}"
+etcd_url: "https://github.com/etcd-io/etcd/releases/download/{{ etcd_version }}/etcd-{{ etcd_version }}-linux-{{ etcd_arch }}.tar.gz"
+
+cert_dir: /etc/ssl/certs
+key_dir: /etc/ssl/private
+
+etcd_ca: "{{ cert_dir }}/ca.crt"
+etcd_cert: "{{ cert_dir }}/etcd-server.crt"
+etcd_key: "{{ key_dir }}/etcd-server.key"
+
+etcd_peer_port: 2380
+etcd_client_port: 2379
