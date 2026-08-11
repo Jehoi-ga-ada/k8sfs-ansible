@@ -1,0 +1,55 @@
+---
+- name: Generate encryption config on the primary master
+  become: true
+  when: inventory_hostname == master_node
+  block:
+    - name: Ensure encryption dir exists
+      ansible.builtin.file:
+        path: "{{ enc_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Check for an existing encryption config
+      ansible.builtin.stat:
+        path: "{{ enc_dir }}/encryption-config.yaml"
+      register: enc_config
+
+    - name: Generate encryption key
+      ansible.builtin.set_fact:
+        encryption_key: "{{ lookup('password', '/dev/null length=32') | b64encode }}"
+      when: not enc_config.stat.exists
+
+    - name: Write encryption config
+      ansible.builtin.template:
+        src: encryption-config.yaml.j2
+        dest: "{{ enc_dir }}/encryption-config.yaml"
+        mode: '0600'
+      when: not enc_config.stat.exists
+
+- name: Pull encryption config to the controller
+  become: true
+  ansible.builtin.fetch:
+    src: "{{ enc_dir }}/encryption-config.yaml"
+    dest: /tmp/k8s-enc/encryption-config.yaml
+    flat: true
+  when: inventory_hostname == master_node
+
+- name: Ensure encryption dir on secondary masters
+  become: true
+  ansible.builtin.file:
+    path: "{{ enc_dir }}"
+    state: directory
+    mode: '0700'
+  when:
+    - inventory_hostname in groups['master']
+    - inventory_hostname != master_node
+
+- name: Distribute encryption config to secondary masters
+  become: true
+  ansible.builtin.copy:
+    src: /tmp/k8s-enc/encryption-config.yaml
+    dest: "{{ enc_dir }}/encryption-config.yaml"
+    mode: '0600'
+  when:
+    - inventory_hostname in groups['master']
+    - inventory_hostname != master_node

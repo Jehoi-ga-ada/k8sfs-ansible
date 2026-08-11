@@ -5,3 +5,4 @@
     - cluster_ssh
     - cluster_tls
     - cluster_config
+    - cluster_encryption
