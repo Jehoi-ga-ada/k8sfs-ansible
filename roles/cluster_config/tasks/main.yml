@@ -14,12 +14,12 @@
         cmd: |
           set -e
           kubectl config set-cluster kubernetes-the-hard-way \
-            --certificate-authority={{ pki_dir }}/ca.crt \
+            --certificate-authority={{ cert_dir }}/ca.crt \
             --server=https://{{ loadbalancer_ip }}:6443 \
             --kubeconfig={{ kubeconfig_dir }}/kube-proxy.kubeconfig
           kubectl config set-credentials system:kube-proxy \
-            --client-certificate={{ pki_dir }}/kube-proxy.crt \
-            --client-key={{ pki_dir }}/kube-proxy.key \
+            --client-certificate={{ cert_dir }}/kube-proxy.crt \
+            --client-key={{ key_dir }}/kube-proxy.key \
             --kubeconfig={{ kubeconfig_dir }}/kube-proxy.kubeconfig
           kubectl config set-context default \
             --cluster=kubernetes-the-hard-way \
@@ -34,12 +34,12 @@
         cmd: |
           set -e
           kubectl config set-cluster kubernetes-the-hard-way \
-            --certificate-authority={{ pki_dir }}/ca.crt \
+            --certificate-authority={{ cert_dir }}/ca.crt \
             --server=https://127.0.0.1:6443 \
             --kubeconfig={{ kubeconfig_dir }}/kube-controller-manager.kubeconfig
           kubectl config set-credentials system:kube-controller-manager \
-            --client-certificate={{ pki_dir }}/kube-controller-manager.crt \
-            --client-key={{ pki_dir }}/kube-controller-manager.key \
+            --client-certificate={{ cert_dir }}/kube-controller-manager.crt \
+            --client-key={{ key_dir }}/kube-controller-manager.key \
             --kubeconfig={{ kubeconfig_dir }}/kube-controller-manager.kubeconfig
           kubectl config set-context default \
             --cluster=kubernetes-the-hard-way \
@@ -54,12 +54,12 @@
         cmd: |
           set -e
           kubectl config set-cluster kubernetes-the-hard-way \
-            --certificate-authority={{ pki_dir }}/ca.crt \
+            --certificate-authority={{ cert_dir }}/ca.crt \
             --server=https://127.0.0.1:6443 \
             --kubeconfig={{ kubeconfig_dir }}/kube-scheduler.kubeconfig
           kubectl config set-credentials system:kube-scheduler \
-            --client-certificate={{ pki_dir }}/kube-scheduler.crt \
-            --client-key={{ pki_dir }}/kube-scheduler.key \
+            --client-certificate={{ cert_dir }}/kube-scheduler.crt \
+            --client-key={{ key_dir }}/kube-scheduler.key \
             --kubeconfig={{ kubeconfig_dir }}/kube-scheduler.kubeconfig
           kubectl config set-context default \
             --cluster=kubernetes-the-hard-way \
@@ -74,13 +74,13 @@
         cmd: |
           set -e
           kubectl config set-cluster kubernetes-the-hard-way \
-            --certificate-authority={{ admin_ca }} \
+            --certificate-authority={{ cert_dir }}/ca.crt \
             --embed-certs=true \
             --server=https://127.0.0.1:6443 \
             --kubeconfig={{ kubeconfig_dir }}/admin.kubeconfig
           kubectl config set-credentials admin \
-            --client-certificate={{ admin_cert }} \
-            --client-key={{ admin_key }} \
+            --client-certificate={{ cert_dir }}/admin.crt \
+            --client-key={{ key_dir }}/admin.key \
             --embed-certs=true \
             --kubeconfig={{ kubeconfig_dir }}/admin.kubeconfig
           kubectl config set-context default \
