@@ -8,3 +8,4 @@
     - cluster_encryption
     - etcd
     - control_plane
+    - container_runtime

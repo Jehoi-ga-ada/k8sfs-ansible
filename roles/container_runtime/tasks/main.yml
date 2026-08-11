@@ -1,0 +1,64 @@
+---
+- name: Install the container runtime
+  become: true
+  when: inventory_hostname in groups['worker']
+  block:
+    - name: Install apt prerequisites
+      ansible.builtin.apt:
+        name: "{{ cri_prereq_packages }}"
+        state: present
+        update_cache: true
+
+    - name: Load required kernel modules
+      community.general.modprobe:
+        name: "{{ item }}"
+        state: present
+        persistent: present
+      loop: "{{ cri_kernel_modules }}"
+
+    - name: Set required kernel parameters
+      ansible.posix.sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        sysctl_file: "{{ cri_sysctl_file }}"
+        sysctl_set: true
+        reload: true
+      loop: "{{ cri_sysctl | dict2items }}"
+
+    - name: Add the Kubernetes apt repository
+      ansible.builtin.deb822_repository:
+        name: kubernetes
+        types: deb
+        uris: "{{ kube_apt_repo }}"
+        suites: /
+        signed_by: "{{ kube_apt_repo }}Release.key"
+
+    - name: Install containerd and CNI components
+      ansible.builtin.apt:
+        name: "{{ cri_packages }}"
+        state: present
+        update_cache: true
+
+    - name: Ensure containerd config dir exists
+      ansible.builtin.file:
+        path: "{{ containerd_config | dirname }}"
+        state: directory
+        mode: '0755'
+
+    - name: Generate default containerd config
+      ansible.builtin.shell:
+        cmd: "containerd config default > {{ containerd_config }}"
+        creates: "{{ containerd_config }}"
+
+    - name: Configure containerd to use systemd cgroups
+      ansible.builtin.replace:
+        path: "{{ containerd_config }}"
+        regexp: 'SystemdCgroup = false'
+        replace: 'SystemdCgroup = true'
+      notify: Restart containerd
+
+    - name: Enable and start containerd
+      ansible.builtin.systemd_service:
+        name: containerd
+        state: started
+        enabled: true
