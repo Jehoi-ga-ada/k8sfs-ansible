@@ -25,6 +25,7 @@ ExecStart=/usr/local/bin/kube-apiserver \
   --kubelet-certificate-authority={{ kube_ca }} \
   --kubelet-client-certificate={{ cert_dir }}/apiserver-kubelet-client.crt \
   --kubelet-client-key={{ key_dir }}/apiserver-kubelet-client.key \
+  --kubelet-preferred-address-types={{ kubelet_preferred_address_types | join(',') }} \
   --runtime-config=api/all=true \
   --service-account-key-file={{ cert_dir }}/service-account.crt \
   --service-account-signing-key-file={{ key_dir }}/service-account.key \
