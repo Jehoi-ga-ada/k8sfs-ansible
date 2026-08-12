@@ -8,11 +8,20 @@ cri_prereq_packages:
   - curl
 
 cri_packages:
-  - containerd
   - kubernetes-cni
   - kubectl
   - ipvsadm
   - ipset
+
+cri_distro_packages:
+  - containerd
+  - runc
+
+containerd_version: "2.3.3"
+runc_version: "v1.5.1"
+containerd_install_dir: /usr/local
+containerd_url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-{{ kube_arch }}.tar.gz"
+runc_url: "https://github.com/opencontainers/runc/releases/download/{{ runc_version }}/runc.{{ kube_arch }}"
 
 cri_kernel_modules:
   - overlay

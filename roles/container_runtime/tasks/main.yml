@@ -33,11 +33,41 @@
         suites: /
         signed_by: "{{ kube_apt_repo }}Release.key"
 
-    - name: Install containerd and CNI components
+    - name: Install CNI components
       ansible.builtin.apt:
         name: "{{ cri_packages }}"
         state: present
         update_cache: true
+
+    - name: Remove the distro containerd and runc
+      ansible.builtin.apt:
+        name: "{{ cri_distro_packages }}"
+        state: absent
+        purge: true
+
+    - name: Install upstream containerd
+      ansible.builtin.unarchive:
+        src: "{{ containerd_url }}"
+        dest: "{{ containerd_install_dir }}"
+        remote_src: true
+        creates: "{{ containerd_install_dir }}/bin/containerd"
+      register: containerd_installed
+      notify: Restart containerd
+
+    - name: Install upstream runc
+      ansible.builtin.get_url:
+        url: "{{ runc_url }}"
+        dest: "{{ containerd_install_dir }}/sbin/runc"
+        mode: '0755'
+        force: true
+      notify: Restart containerd
+
+    - name: Write the containerd systemd unit
+      ansible.builtin.template:
+        src: containerd.service.j2
+        dest: /etc/systemd/system/containerd.service
+        mode: '0644'
+      notify: Restart containerd
 
     - name: Ensure containerd config dir exists
       ansible.builtin.file:
@@ -45,10 +75,17 @@
         state: directory
         mode: '0755'
 
+    - name: Check for an existing containerd config
+      ansible.builtin.stat:
+        path: "{{ containerd_config }}"
+      register: containerd_config_stat
+
     - name: Generate default containerd config
       ansible.builtin.shell:
-        cmd: "containerd config default > {{ containerd_config }}"
-        creates: "{{ containerd_config }}"
+        cmd: "{{ containerd_install_dir }}/bin/containerd config default > {{ containerd_config }}"
+      when: containerd_installed is changed or not containerd_config_stat.stat.exists
+      changed_when: true
+      notify: Restart containerd
 
     - name: Configure containerd to use systemd cgroups
       ansible.builtin.replace:
@@ -62,3 +99,4 @@
         name: containerd
         state: started
         enabled: true
+        daemon_reload: true
