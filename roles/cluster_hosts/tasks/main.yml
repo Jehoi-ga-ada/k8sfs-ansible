@@ -1,0 +1,10 @@
+---
+- name: Map cluster node names in "{{ hosts_file }}"
+  become: true
+  ansible.builtin.blockinfile:
+    path: "{{ hosts_file }}"
+    marker: "# {mark} {{ hosts_block_marker }}"
+    block: |
+      {% for host in groups['k8s'] %}
+      {{ hostvars[host].ansible_host }} {{ host }}
+      {% endfor %}
