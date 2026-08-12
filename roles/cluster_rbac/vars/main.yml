@@ -1,0 +1,20 @@
+---
+kubeconfig_dir: /var/lib/kubernetes
+admin_kubeconfig: "{{ kubeconfig_dir }}/admin.kubeconfig"
+
+rbac_manifest_dir: "{{ kubeconfig_dir }}/rbac"
+kubelet_rbac_manifest: "{{ rbac_manifest_dir }}/kube-apiserver-to-kubelet.yaml"
+
+kubelet_api_cluster_role: system:kube-apiserver-to-kubelet
+kubelet_api_binding: system:kube-apiserver
+apiserver_kubelet_user: kube-apiserver-kubelet-client
+
+kubelet_api_resources:
+  - nodes/proxy
+  - nodes/stats
+  - nodes/log
+  - nodes/spec
+  - nodes/metrics
+
+kubelet_api_verbs:
+  - "*"

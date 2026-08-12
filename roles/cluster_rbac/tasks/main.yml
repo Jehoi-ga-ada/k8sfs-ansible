@@ -1,0 +1,26 @@
+---
+- name: Authorize the API server against the kubelet API
+  become: true
+  run_once: true
+  delegate_to: "{{ master_node }}"
+  block:
+    - name: Ensure the RBAC manifest dir exists
+      ansible.builtin.file:
+        path: "{{ rbac_manifest_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Render the kube-apiserver-to-kubelet RBAC
+      ansible.builtin.template:
+        src: kubelet-rbac.yaml.j2
+        dest: "{{ kubelet_rbac_manifest }}"
+        mode: '0600'
+
+    - name: Apply the kube-apiserver-to-kubelet RBAC
+      ansible.builtin.command:
+        cmd: >-
+          kubectl apply
+          -f {{ kubelet_rbac_manifest }}
+          --kubeconfig {{ admin_kubeconfig }}
+      register: kubelet_rbac
+      changed_when: "'unchanged' not in kubelet_rbac.stdout"
