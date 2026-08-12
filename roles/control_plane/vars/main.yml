@@ -1,5 +1,4 @@
 ---
-kube_release_url: "https://dl.k8s.io/release/{{ kube_version }}/bin/linux/{{ kube_arch }}"
 kube_binaries:
   - kube-apiserver
   - kube-controller-manager
@@ -18,9 +17,6 @@ loadbalancer_ip: "{{ hostvars['lb-1'].ansible_host }}"
 
 apiserver_port: 6443
 etcd_client_port: 2379
-
-pod_cidr: 10.244.0.0/16
-service_cidr: 10.96.0.0/16
 
 control_plane_services:
   - kube-apiserver

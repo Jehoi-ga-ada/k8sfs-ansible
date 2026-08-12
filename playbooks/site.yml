@@ -9,3 +9,4 @@
     - etcd
     - control_plane
     - container_runtime
+    - worker

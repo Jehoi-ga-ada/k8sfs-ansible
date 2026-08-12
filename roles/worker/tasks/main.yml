@@ -1,0 +1,158 @@
+---
+- name: Enable TLS bootstrapping on the primary master
+  become: true
+  run_once: true
+  delegate_to: "{{ master_node }}"
+  block:
+    - name: Ensure bootstrap manifest dir exists
+      ansible.builtin.file:
+        path: "{{ bootstrap_manifest_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Render bootstrap token secret
+      ansible.builtin.template:
+        src: bootstrap-token.yaml.j2
+        dest: "{{ bootstrap_manifest_dir }}/bootstrap-token.yaml"
+        mode: '0600'
+
+    - name: Render TLS bootstrap RBAC
+      ansible.builtin.template:
+        src: tls-bootstrap-rbac.yaml.j2
+        dest: "{{ bootstrap_manifest_dir }}/tls-bootstrap-rbac.yaml"
+        mode: '0600'
+
+    - name: Check for an existing bootstrap token
+      ansible.builtin.command:
+        cmd: >-
+          kubectl get secret {{ bootstrap_token_secret_name }}
+          --namespace kube-system
+          --kubeconfig {{ admin_kubeconfig }}
+      register: existing_token
+      failed_when: false
+      changed_when: false
+
+    - name: Create the bootstrap token
+      ansible.builtin.command:
+        cmd: >-
+          kubectl create
+          -f {{ bootstrap_manifest_dir }}/bootstrap-token.yaml
+          --kubeconfig {{ admin_kubeconfig }}
+      when: existing_token.rc != 0
+
+    - name: Apply TLS bootstrap RBAC
+      ansible.builtin.command:
+        cmd: >-
+          kubectl apply
+          -f {{ bootstrap_manifest_dir }}/tls-bootstrap-rbac.yaml
+          --kubeconfig {{ admin_kubeconfig }}
+      register: bootstrap_rbac
+      changed_when: "'unchanged' not in bootstrap_rbac.stdout"
+
+- name: Bootstrap the worker
+  become: true
+  when: inventory_hostname in groups['worker']
+  block:
+    - name: Install worker binaries
+      ansible.builtin.get_url:
+        url: "{{ kube_release_url }}/{{ item }}"
+        dest: "/usr/local/bin/{{ item }}"
+        mode: '0755'
+      loop: "{{ worker_binaries }}"
+
+    - name: Ensure worker dirs exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ kubelet_dir }}"
+        - "{{ kubelet_pki_dir }}"
+        - "{{ kube_proxy_dir }}"
+        - /var/run/kubernetes
+
+    - name: Write kubelet bootstrap kubeconfig
+      ansible.builtin.template:
+        src: bootstrap-kubeconfig.j2
+        dest: "{{ kubelet_dir }}/bootstrap-kubeconfig"
+        mode: '0600'
+      notify: Restart kubelet
+
+    - name: Write kubelet config
+      ansible.builtin.template:
+        src: kubelet-config.yaml.j2
+        dest: "{{ kubelet_dir }}/kubelet-config.yaml"
+        mode: '0600'
+      notify: Restart kubelet
+
+    - name: Write kube-proxy config
+      ansible.builtin.template:
+        src: kube-proxy-config.yaml.j2
+        dest: "{{ kube_proxy_dir }}/kube-proxy-config.yaml"
+        mode: '0644'
+      notify: Restart kube-proxy
+
+    - name: Write worker systemd units
+      ansible.builtin.template:
+        src: "{{ item }}.service.j2"
+        dest: "/etc/systemd/system/{{ item }}.service"
+        mode: '0644'
+      loop: "{{ worker_services }}"
+      notify: "Restart {{ item }}"
+
+    - name: Enable and start worker services
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+        daemon_reload: true
+      loop: "{{ worker_services }}"
+
+- name: Flush handlers before approving certificates
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for kubelet serving CSRs
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      kubectl get csr
+      --field-selector spec.signerName={{ kubelet_serving_signer }}
+      --output jsonpath={.items[*].metadata.name}
+      --kubeconfig {{ admin_kubeconfig }}
+  register: serving_csrs
+  until: serving_csrs.stdout.split() | length >= groups['worker'] | length
+  retries: 12
+  delay: 5
+  failed_when: false
+  changed_when: false
+  run_once: true
+  delegate_to: "{{ master_node }}"
+
+- name: Approve kubelet serving CSRs
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      kubectl certificate approve {{ item }}
+      --kubeconfig {{ admin_kubeconfig }}
+  loop: "{{ serving_csrs.stdout.split() }}"
+  register: approved_csrs
+  changed_when: "'approved' in approved_csrs.stdout"
+  run_once: true
+  delegate_to: "{{ master_node }}"
+
+- name: Verify registered nodes
+  become: true
+  ansible.builtin.command:
+    cmd: kubectl get nodes --kubeconfig {{ admin_kubeconfig }}
+  register: registered_nodes
+  until: registered_nodes.stdout_lines | length > groups['worker'] | length
+  retries: 10
+  delay: 5
+  changed_when: false
+  run_once: true
+  delegate_to: "{{ master_node }}"
+
+- name: Registered nodes
+  ansible.builtin.debug:
+    msg: "{{ registered_nodes.stdout_lines }}"
+  run_once: true

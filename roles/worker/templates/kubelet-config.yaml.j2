@@ -1,0 +1,21 @@
+kind: KubeletConfiguration
+apiVersion: kubelet.config.k8s.io/v1beta1
+authentication:
+  anonymous:
+    enabled: false
+  webhook:
+    enabled: true
+  x509:
+    clientCAFile: {{ kube_ca }}
+authorization:
+  mode: Webhook
+containerRuntimeEndpoint: {{ containerd_socket }}
+clusterDomain: {{ cluster_domain }}
+clusterDNS:
+  - {{ cluster_dns }}
+cgroupDriver: systemd
+resolvConf: {{ resolv_conf }}
+runtimeRequestTimeout: "15m"
+rotateCertificates: true
+serverTLSBootstrap: true
+registerNode: true

@@ -5,3 +5,8 @@ ansible_python_interpreter: /usr/bin/python3
 ansible_ssh_common_args: '-o ProxyJump=macos@100.126.151.59'
 
 kube_version: "v1.32.3"
+kube_arch: arm64
+kube_release_url: "https://dl.k8s.io/release/{{ kube_version }}/bin/linux/{{ kube_arch }}"
+
+pod_cidr: 10.244.0.0/16
+service_cidr: 10.96.0.0/16

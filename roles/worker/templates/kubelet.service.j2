@@ -1,0 +1,20 @@
+[Unit]
+Description=Kubernetes Kubelet
+Documentation=https://github.com/kubernetes/kubernetes
+After=containerd.service
+Requires=containerd.service
+
+[Service]
+ExecStart=/usr/local/bin/kubelet \
+  --bootstrap-kubeconfig={{ kubelet_dir }}/bootstrap-kubeconfig \
+  --config={{ kubelet_dir }}/kubelet-config.yaml \
+  --kubeconfig={{ kubelet_dir }}/kubeconfig \
+  --cert-dir={{ kubelet_pki_dir }}/ \
+  --hostname-override={{ inventory_hostname }} \
+  --node-ip={{ ansible_host }} \
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
