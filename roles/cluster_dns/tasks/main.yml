@@ -1,0 +1,33 @@
+---
+- name: Deploy the DNS cluster add-on
+  become: true
+  run_once: true
+  delegate_to: "{{ master_node }}"
+  environment:
+    KUBECONFIG: "{{ admin_kubeconfig }}"
+  block:
+    - name: Ensure the addon manifest dir exists
+      ansible.builtin.file:
+        path: "{{ dns_manifest_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Render the CoreDNS manifest
+      ansible.builtin.template:
+        src: coredns.yaml.j2
+        dest: "{{ coredns_manifest }}"
+        mode: '0600'
+
+    - name: Apply the CoreDNS manifest
+      ansible.builtin.command:
+        cmd: "kubectl apply -f {{ coredns_manifest }}"
+      register: coredns_apply
+      changed_when: "'unchanged' not in coredns_apply.stdout"
+
+    - name: Wait for CoreDNS to become available
+      ansible.builtin.command:
+        cmd: >-
+          kubectl rollout status deployment/{{ coredns_name }}
+          --namespace {{ coredns_namespace }}
+          --timeout={{ coredns_rollout_timeout }}
+      changed_when: false

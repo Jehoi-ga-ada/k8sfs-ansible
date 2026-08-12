@@ -1,0 +1,21 @@
+---
+kubeconfig_dir: /var/lib/kubernetes
+admin_kubeconfig: "{{ kubeconfig_dir }}/admin.kubeconfig"
+
+dns_manifest_dir: "{{ kubeconfig_dir }}/addons"
+coredns_manifest: "{{ dns_manifest_dir }}/coredns.yaml"
+
+coredns_namespace: kube-system
+coredns_name: coredns
+coredns_service_name: kube-dns
+coredns_app_label: kube-dns
+coredns_image: "registry.k8s.io/coredns/coredns:{{ coredns_version }}"
+coredns_rollout_timeout: 180s
+
+cluster_domain: cluster.local
+cluster_dns: "{{ service_cidr.split('.')[:3] | join('.') }}.10"
+
+coredns_dns_port: 53
+coredns_metrics_port: 9153
+coredns_health_port: 8080
+coredns_ready_port: 8181
