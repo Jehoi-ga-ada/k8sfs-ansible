@@ -1,0 +1,15 @@
+---
+kubeconfig_dir: /var/lib/kubernetes
+cert_dir: /etc/ssl/certs
+key_dir: /etc/ssl/private
+
+kube_ca: "{{ cert_dir }}/ca.crt"
+admin_cert: "{{ cert_dir }}/admin.crt"
+admin_key: "{{ key_dir }}/admin.key"
+
+loadbalancer_ip: "{{ hostvars['lb-1'].ansible_host }}"
+apiserver_port: 6443
+kubectl_server: "https://{{ loadbalancer_ip }}:{{ apiserver_port }}"
+
+cluster_name: kubernetes-the-hard-way
+remote_kubeconfig: "{{ kubeconfig_dir }}/admin-remote.kubeconfig"

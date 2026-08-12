@@ -1,0 +1,66 @@
+---
+- name: Generate the remote admin kubeconfig
+  become: true
+  run_once: true
+  delegate_to: "{{ master_node }}"
+  ansible.builtin.shell:
+    cmd: |
+      set -e
+      kubectl config set-cluster {{ cluster_name }} \
+        --certificate-authority={{ kube_ca }} \
+        --embed-certs=true \
+        --server={{ kubectl_server }} \
+        --kubeconfig={{ remote_kubeconfig }}
+      kubectl config set-credentials admin \
+        --client-certificate={{ admin_cert }} \
+        --client-key={{ admin_key }} \
+        --embed-certs=true \
+        --kubeconfig={{ remote_kubeconfig }}
+      kubectl config set-context {{ cluster_name }} \
+        --cluster={{ cluster_name }} \
+        --user=admin \
+        --kubeconfig={{ remote_kubeconfig }}
+      kubectl config use-context {{ cluster_name }} \
+        --kubeconfig={{ remote_kubeconfig }}
+    creates: "{{ remote_kubeconfig }}"
+
+- name: Ensure the local kube dir exists
+  ansible.builtin.file:
+    path: "{{ kubectl_local_config | dirname }}"
+    state: directory
+    mode: '0700'
+  run_once: true
+  delegate_to: localhost
+  become: false
+
+- name: Fetch the kubeconfig to the controller
+  become: true
+  ansible.builtin.fetch:
+    src: "{{ remote_kubeconfig }}"
+    dest: "{{ kubectl_local_config }}"
+    flat: true
+  run_once: true
+  delegate_to: "{{ master_node }}"
+
+- name: Secure the local kubeconfig
+  ansible.builtin.file:
+    path: "{{ kubectl_local_config }}"
+    mode: '0600'
+  run_once: true
+  delegate_to: localhost
+  become: false
+
+- name: Verify remote access
+  ansible.builtin.command:
+    cmd: kubectl get nodes --kubeconfig {{ kubectl_local_config }}
+  register: remote_access
+  failed_when: false
+  changed_when: false
+  run_once: true
+  delegate_to: localhost
+  become: false
+
+- name: Remote access result
+  ansible.builtin.debug:
+    msg: "{{ remote_access.stdout_lines if remote_access.rc == 0 else remote_access.stderr_lines }}"
+  run_once: true

@@ -10,3 +10,4 @@
     - control_plane
     - container_runtime
     - worker
+    - kubectl_access
