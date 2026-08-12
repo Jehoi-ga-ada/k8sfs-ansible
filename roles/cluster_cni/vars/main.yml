@@ -9,13 +9,21 @@ helm_bin: /usr/local/bin/helm
 cilium_repo: https://helm.cilium.io/
 cilium_namespace: kube-system
 cilium_release: cilium
+cilium_chart: cilium
+cilium_daemonset: cilium
+cilium_rollout_timeout: 600s
 
 loadbalancer_ip: "{{ hostvars['lb-1'].ansible_host }}"
 apiserver_port: 6443
 
+cilium_values_file: "{{ kubeconfig_dir }}/cilium-values.yaml"
+
 cilium_values:
-  ipam.mode: kubernetes
-  k8s.requireIPv4PodCIDR: "true"
+  ipam:
+    mode: kubernetes
+  k8s:
+    requireIPv4PodCIDR: true
   k8sServiceHost: "{{ loadbalancer_ip }}"
   k8sServicePort: "{{ apiserver_port }}"
-  operator.replicas: "1"
+  operator:
+    replicas: 1

@@ -20,54 +20,26 @@
         remote_src: true
         mode: '0755'
 
-    - name: Add the Cilium helm repo
-      ansible.builtin.command:
-        cmd: "{{ helm_bin }} repo add cilium {{ cilium_repo }} --force-update"
-      changed_when: false
-
-    - name: Check the Cilium release
-      ansible.builtin.command:
-        cmd: >-
-          {{ helm_bin }} status {{ cilium_release }}
-          --namespace {{ cilium_namespace }}
-          --output json
-      register: cilium_status
-      failed_when: false
-      changed_when: false
+    - name: Write the Cilium values
+      ansible.builtin.copy:
+        content: "{{ cilium_values | to_nice_yaml }}"
+        dest: "{{ cilium_values_file }}"
+        mode: '0600'
 
     - name: Install Cilium
       ansible.builtin.command:
         cmd: >-
-          {{ helm_bin }} upgrade --install {{ cilium_release }} cilium/cilium
+          {{ helm_bin }} upgrade --install {{ cilium_release }} {{ cilium_chart }}
+          --repo {{ cilium_repo }}
           --version {{ cilium_version }}
           --namespace {{ cilium_namespace }}
-          {% for key, value in cilium_values.items() %}--set {{ key }}={{ value }} {% endfor %}
-      when: >-
-        cilium_status.rc != 0 or
-        (cilium_status.stdout | from_json).chart.metadata.version != cilium_version
+          --values {{ cilium_values_file }}
+      changed_when: true
 
     - name: Wait for the Cilium agents
       ansible.builtin.command:
         cmd: >-
-          kubectl rollout status daemonset/cilium
+          kubectl rollout status daemonset/{{ cilium_daemonset }}
           --namespace {{ cilium_namespace }}
-          --timeout=180s
+          --timeout={{ cilium_rollout_timeout }}
       changed_when: false
-
-    - name: Wait for the nodes to become ready
-      ansible.builtin.command:
-        cmd: >-
-          kubectl wait --for=condition=Ready nodes --all
-          --timeout=120s
-      changed_when: false
-
-    - name: Read node status
-      ansible.builtin.command:
-        cmd: kubectl get nodes
-      register: cni_nodes
-      changed_when: false
-
-- name: Pod network status
-  ansible.builtin.debug:
-    msg: "{{ cni_nodes.stdout_lines }}"
-  run_once: true
