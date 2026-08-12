@@ -2,6 +2,8 @@
 - name: Setup kubernetes cluster
   hosts: k8s
   roles:
+    - role: cluster_hosts
+      tags: cluster_hosts
     - role: cluster_ssh
       tags: cluster_ssh
     - role: cluster_tls
