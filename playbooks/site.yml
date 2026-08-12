@@ -11,3 +11,4 @@
     - container_runtime
     - worker
     - kubectl_access
+    - cluster_cni

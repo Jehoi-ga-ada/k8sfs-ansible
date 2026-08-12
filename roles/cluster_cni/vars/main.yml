@@ -1,0 +1,21 @@
+---
+kubeconfig_dir: /var/lib/kubernetes
+admin_kubeconfig: "{{ kubeconfig_dir }}/admin.kubeconfig"
+
+helm_url: "https://get.helm.sh/helm-{{ helm_version }}-linux-{{ kube_arch }}.tar.gz"
+helm_release_dir: "/tmp/linux-{{ kube_arch }}"
+helm_bin: /usr/local/bin/helm
+
+cilium_repo: https://helm.cilium.io/
+cilium_namespace: kube-system
+cilium_release: cilium
+
+loadbalancer_ip: "{{ hostvars['lb-1'].ansible_host }}"
+apiserver_port: 6443
+
+cilium_values:
+  ipam.mode: kubernetes
+  k8s.requireIPv4PodCIDR: "true"
+  k8sServiceHost: "{{ loadbalancer_ip }}"
+  k8sServicePort: "{{ apiserver_port }}"
+  operator.replicas: "1"

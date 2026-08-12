@@ -1,0 +1,4 @@
+---
+master_node: master-1
+cilium_version: "1.16.5"
+helm_version: "v3.16.3"
