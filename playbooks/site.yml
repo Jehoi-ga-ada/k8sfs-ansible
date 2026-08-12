@@ -2,13 +2,27 @@
 - name: Setup kubernetes cluster
   hosts: k8s
   roles:
-    - cluster_ssh
-    - cluster_tls
-    - cluster_config
-    - cluster_encryption
-    - etcd
-    - control_plane
-    - container_runtime
-    - worker
-    - kubectl_access
-    - cluster_cni
+    - role: cluster_ssh
+      tags: cluster_ssh
+    - role: cluster_tls
+      tags: cluster_tls
+    - role: cluster_config
+      tags: cluster_config
+    - role: cluster_encryption
+      tags: cluster_encryption
+    - role: etcd
+      tags: etcd
+    - role: control_plane
+      tags: control_plane
+    - role: container_runtime
+      tags: container_runtime
+    - role: worker
+      tags: worker
+    - role: cluster_rbac
+      tags: cluster_rbac
+    - role: kubectl_access
+      tags: kubectl_access
+    - role: cluster_cni
+      tags: cluster_cni
+    - role: cluster_dns
+      tags: cluster_dns
