@@ -58,7 +58,11 @@
         url: "{{ kube_release_url }}/{{ item }}"
         dest: "/usr/local/bin/{{ item }}"
         mode: '0755'
+        force: true
       loop: "{{ worker_binaries }}"
+      notify:
+        - Restart kubelet
+        - Restart kube-proxy
 
     - name: Ensure worker dirs exist
       ansible.builtin.file:

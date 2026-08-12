@@ -8,7 +8,12 @@
         url: "{{ kube_release_url }}/{{ item }}"
         dest: "/usr/local/bin/{{ item }}"
         mode: '0755'
+        force: true
       loop: "{{ kube_binaries }}"
+      notify:
+        - Restart kube-apiserver
+        - Restart kube-controller-manager
+        - Restart kube-scheduler
 
     - name: Secure kubeconfigs
       ansible.builtin.file:
