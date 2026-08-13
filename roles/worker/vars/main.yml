@@ -5,12 +5,9 @@ worker_binaries:
 worker_services:
   - kubelet
 
-legacy_kube_proxy_unit: /etc/systemd/system/kube-proxy.service
-
 kubeconfig_dir: /var/lib/kubernetes
 kubelet_dir: /var/lib/kubelet
 kubelet_pki_dir: /var/lib/kubelet/pki
-kube_proxy_dir: /var/lib/kube-proxy
 cert_dir: /etc/ssl/certs
 key_dir: /etc/ssl/private
 

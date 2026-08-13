@@ -17,5 +17,3 @@ control_plane_certs:
 
 node_certs:
   - /etc/ssl/certs/ca.crt
-  - /etc/ssl/certs/kube-proxy.crt
-  - /etc/ssl/private/kube-proxy.key

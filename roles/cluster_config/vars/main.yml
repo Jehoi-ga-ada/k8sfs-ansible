@@ -1,6 +1,5 @@
 ---
 kubeconfig_dir: /var/lib/kubernetes
-kube_proxy_dir: /var/lib/kube-proxy
 cert_dir: /etc/ssl/certs
 key_dir: /etc/ssl/private
 
@@ -10,6 +9,3 @@ control_plane_kubeconfigs:
   - admin.kubeconfig
   - kube-controller-manager.kubeconfig
   - kube-scheduler.kubeconfig
-
-node_kubeconfigs:
-  - kube-proxy.kubeconfig

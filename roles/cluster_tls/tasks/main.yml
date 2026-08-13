@@ -83,26 +83,6 @@
         ownca_privatekey_path: /etc/ssl/private/ca.key
         provider: ownca
 
-    - name: Create private key for kube proxy
-      community.crypto.openssl_privatekey:
-        path: /etc/ssl/private/kube-proxy.key
-        size: 2048
-
-    - name: Create CSR for kube proxy
-      community.crypto.openssl_csr:
-        path: /etc/ssl/csr/kube-proxy.csr
-        privatekey_path: /etc/ssl/private/kube-proxy.key
-        common_name: system:kube-proxy
-        organization_name: system:node-proxier
-
-    - name: Sign CSR for kube proxy using CA server private key
-      community.crypto.x509_certificate:
-        path: /etc/ssl/certs/kube-proxy.crt
-        csr_path: /etc/ssl/csr/kube-proxy.csr
-        ownca_path: /etc/ssl/certs/ca.crt
-        ownca_privatekey_path: /etc/ssl/private/ca.key
-        provider: ownca
-
     - name: Create private key for kube scheduler
       community.crypto.openssl_privatekey:
         path: /etc/ssl/private/kube-scheduler.key

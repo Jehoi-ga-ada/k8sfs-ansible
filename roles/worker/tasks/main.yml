@@ -102,32 +102,6 @@
         daemon_reload: true
       loop: "{{ worker_services }}"
 
-    - name: Check for a leftover kube-proxy unit
-      ansible.builtin.stat:
-        path: "{{ legacy_kube_proxy_unit }}"
-      register: legacy_kube_proxy
-
-    - name: Stop and disable the leftover kube-proxy
-      ansible.builtin.systemd_service:
-        name: kube-proxy
-        state: stopped
-        enabled: false
-      when: legacy_kube_proxy.stat.exists
-
-    - name: Remove the leftover kube-proxy files
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: absent
-      loop:
-        - "{{ legacy_kube_proxy_unit }}"
-        - /usr/local/bin/kube-proxy
-        - "{{ kube_proxy_dir }}"
-
-    - name: Reload systemd after removing kube-proxy
-      ansible.builtin.systemd_service:
-        daemon_reload: true
-      when: legacy_kube_proxy.stat.exists
-
 - name: Flush handlers before approving certificates
   ansible.builtin.meta: flush_handlers
 

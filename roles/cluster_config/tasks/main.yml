@@ -9,26 +9,6 @@
         state: directory
         mode: '0755'
 
-    - name: Generate kube-proxy kubeconfig
-      ansible.builtin.shell:
-        cmd: |
-          set -e
-          kubectl config set-cluster kubernetes-the-hard-way \
-            --certificate-authority={{ cert_dir }}/ca.crt \
-            --server=https://{{ loadbalancer_ip }}:6443 \
-            --kubeconfig={{ kubeconfig_dir }}/kube-proxy.kubeconfig
-          kubectl config set-credentials system:kube-proxy \
-            --client-certificate={{ cert_dir }}/kube-proxy.crt \
-            --client-key={{ key_dir }}/kube-proxy.key \
-            --kubeconfig={{ kubeconfig_dir }}/kube-proxy.kubeconfig
-          kubectl config set-context default \
-            --cluster=kubernetes-the-hard-way \
-            --user=system:kube-proxy \
-            --kubeconfig={{ kubeconfig_dir }}/kube-proxy.kubeconfig
-          kubectl config use-context default \
-            --kubeconfig={{ kubeconfig_dir }}/kube-proxy.kubeconfig
-        creates: "{{ kubeconfig_dir }}/kube-proxy.kubeconfig"
-
     - name: Generate kube-controller-manager kubeconfig
       ansible.builtin.shell:
         cmd: |
@@ -97,7 +77,7 @@
     src: "{{ kubeconfig_dir }}/{{ item }}"
     dest: "/tmp/k8s-kubeconfigs/{{ item }}"
     flat: true
-  loop: "{{ control_plane_kubeconfigs + node_kubeconfigs }}"
+  loop: "{{ control_plane_kubeconfigs }}"
   when: inventory_hostname == master_node
 
 - name: Ensure kubeconfig dir on secondary masters
@@ -120,19 +100,3 @@
   when:
     - inventory_hostname in groups['master']
     - inventory_hostname != master_node
-
-- name: Ensure kube-proxy dir on workers
-  become: true
-  ansible.builtin.file:
-    path: "{{ kube_proxy_dir }}"
-    state: directory
-    mode: '0755'
-  when: inventory_hostname in groups['worker']
-
-- name: Distribute kube-proxy kubeconfig to workers
-  become: true
-  ansible.builtin.copy:
-    src: "/tmp/k8s-kubeconfigs/kube-proxy.kubeconfig"
-    dest: "{{ kube_proxy_dir }}/kube-proxy.kubeconfig"
-    mode: '0600'
-  when: inventory_hostname in groups['worker']
