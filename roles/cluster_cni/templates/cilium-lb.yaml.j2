@@ -1,0 +1,21 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: {{ lb_ip_pool_name }}
+spec:
+  blocks:
+    - start: "{{ lb_ip_pool_start }}"
+      stop: "{{ lb_ip_pool_stop }}"
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: {{ l2_announce_policy_name }}
+spec:
+  interfaces:
+{% for interface in l2_announce_interfaces %}
+    - "{{ interface }}"
+{% endfor %}
+  externalIPs: true
+  loadBalancerIPs: true

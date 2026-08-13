@@ -5,10 +5,3 @@
     state: restarted
     daemon_reload: true
   become: true
-
-- name: Restart kube-proxy
-  ansible.builtin.systemd_service:
-    name: kube-proxy
-    state: restarted
-    daemon_reload: true
-  become: true

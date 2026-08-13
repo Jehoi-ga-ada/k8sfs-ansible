@@ -25,6 +25,7 @@
         content: "{{ cilium_values | to_nice_yaml }}"
         dest: "{{ cilium_values_file }}"
         mode: '0600'
+      register: cilium_values_written
 
     - name: Install Cilium
       ansible.builtin.command:
@@ -36,6 +37,16 @@
           --values {{ cilium_values_file }}
       changed_when: true
 
+    - name: Restart Cilium when the values changed
+      ansible.builtin.command:
+        cmd: >-
+          kubectl rollout restart
+          daemonset/{{ cilium_daemonset }}
+          deployment/{{ cilium_operator_deployment }}
+          --namespace {{ cilium_namespace }}
+      when: cilium_values_written is changed
+      changed_when: true
+
     - name: Wait for the Cilium agents
       ansible.builtin.command:
         cmd: >-
@@ -43,3 +54,21 @@
           --namespace {{ cilium_namespace }}
           --timeout={{ cilium_rollout_timeout }}
       changed_when: false
+
+    - name: Ensure the addon manifest dir exists
+      ansible.builtin.file:
+        path: "{{ cilium_addon_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Render the Cilium load balancer manifest
+      ansible.builtin.template:
+        src: cilium-lb.yaml.j2
+        dest: "{{ cilium_lb_manifest }}"
+        mode: '0600'
+
+    - name: Apply the Cilium load balancer manifest
+      ansible.builtin.command:
+        cmd: "kubectl apply -f {{ cilium_lb_manifest }}"
+      register: cilium_lb_apply
+      changed_when: "'unchanged' not in cilium_lb_apply.stdout"

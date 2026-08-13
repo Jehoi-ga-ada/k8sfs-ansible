@@ -1,11 +1,11 @@
 ---
 worker_binaries:
   - kubelet
-  - kube-proxy
 
 worker_services:
   - kubelet
-  - kube-proxy
+
+legacy_kube_proxy_unit: /etc/systemd/system/kube-proxy.service
 
 kubeconfig_dir: /var/lib/kubernetes
 kubelet_dir: /var/lib/kubelet

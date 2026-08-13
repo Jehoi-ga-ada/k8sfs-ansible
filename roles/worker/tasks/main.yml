@@ -60,9 +60,7 @@
         mode: '0755'
         force: true
       loop: "{{ worker_binaries }}"
-      notify:
-        - Restart kubelet
-        - Restart kube-proxy
+      notify: Restart kubelet
 
     - name: Ensure worker dirs exist
       ansible.builtin.file:
@@ -72,7 +70,6 @@
       loop:
         - "{{ kubelet_dir }}"
         - "{{ kubelet_pki_dir }}"
-        - "{{ kube_proxy_dir }}"
         - /var/run/kubernetes
 
     - name: Write kubelet bootstrap kubeconfig
@@ -89,13 +86,6 @@
         mode: '0600'
       notify: Restart kubelet
 
-    - name: Write kube-proxy config
-      ansible.builtin.template:
-        src: kube-proxy-config.yaml.j2
-        dest: "{{ kube_proxy_dir }}/kube-proxy-config.yaml"
-        mode: '0644'
-      notify: Restart kube-proxy
-
     - name: Write worker systemd units
       ansible.builtin.template:
         src: "{{ item }}.service.j2"
@@ -111,6 +101,32 @@
         enabled: true
         daemon_reload: true
       loop: "{{ worker_services }}"
+
+    - name: Check for a leftover kube-proxy unit
+      ansible.builtin.stat:
+        path: "{{ legacy_kube_proxy_unit }}"
+      register: legacy_kube_proxy
+
+    - name: Stop and disable the leftover kube-proxy
+      ansible.builtin.systemd_service:
+        name: kube-proxy
+        state: stopped
+        enabled: false
+      when: legacy_kube_proxy.stat.exists
+
+    - name: Remove the leftover kube-proxy files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ legacy_kube_proxy_unit }}"
+        - /usr/local/bin/kube-proxy
+        - "{{ kube_proxy_dir }}"
+
+    - name: Reload systemd after removing kube-proxy
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+      when: legacy_kube_proxy.stat.exists
 
 - name: Flush handlers before approving certificates
   ansible.builtin.meta: flush_handlers
