@@ -10,8 +10,6 @@ cri_prereq_packages:
 cri_packages:
   - kubernetes-cni
   - kubectl
-  - ipvsadm
-  - ipset
 
 cri_distro_packages:
   - containerd

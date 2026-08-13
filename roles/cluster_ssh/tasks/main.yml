@@ -1,25 +1,4 @@
 ---
-- name: Ensure ~/.ssh exists
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.ssh"
-    state: directory
-    mode: "0700"
-  when: inventory_hostname == master_node
-
-- name: Create ed25519 keypair (idempotent)
-  community.crypto.openssh_keypair:
-    path: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
-    type: ed25519
-  register: master1_key
-  when: inventory_hostname == master_node
-
-- name: Add "{{ master_node }}" pubkey to authorized_keys
-  ansible.posix.authorized_key:
-    user: "{{ ansible_user }}"
-    state: present
-    key: "{{ hostvars[master_node].master1_key.public_key }}"
-  when: inventory_hostname != master_node
-
 - name: Download kubectl
   ansible.builtin.get_url:
     url: "{{ kube_release_url }}/kubectl"
