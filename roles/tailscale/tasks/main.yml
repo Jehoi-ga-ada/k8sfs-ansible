@@ -37,5 +37,5 @@
       when: tailscale_enable_ssh
 
     - name: Advertise routes for local network
-      ansible.builtin.command: tailscale set --advertise-routes=10.68.51.0/24
+      ansible.builtin.command: tailscale set --advertise-routes=10.68.48.0/20
       become: true
