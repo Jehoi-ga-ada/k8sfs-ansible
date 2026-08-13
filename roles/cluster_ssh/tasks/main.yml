@@ -22,7 +22,7 @@
 
 - name: Download kubectl
   ansible.builtin.get_url:
-    url: https://dl.k8s.io/release/v1.36.0/bin/linux/arm64/kubectl
+    url: "{{ kube_release_url }}/kubectl"
     dest: /usr/local/bin/kubectl
     mode: '0755'
   become: true
