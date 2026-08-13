@@ -22,6 +22,10 @@ cilium_values_file: "{{ kubeconfig_dir }}/cilium-values.yaml"
 cilium_addon_dir: "{{ kubeconfig_dir }}/addons"
 cilium_lb_manifest: "{{ cilium_addon_dir }}/cilium-lb.yaml"
 
+cilium_lb_crds:
+  - ciliumloadbalancerippools.cilium.io
+  - ciliuml2announcementpolicies.cilium.io
+
 lb_lan_prefix: "{{ hostvars[master_node].ansible_host.split('.')[:3] | join('.') }}"
 lb_ip_pool_name: lan-pool
 l2_announce_policy_name: lan-announce

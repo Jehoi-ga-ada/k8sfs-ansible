@@ -47,6 +47,23 @@
       when: cilium_values_written is changed
       changed_when: true
 
+    - name: Wait for the Cilium operator
+      ansible.builtin.command:
+        cmd: >-
+          kubectl rollout status deployment/{{ cilium_operator_deployment }}
+          --namespace {{ cilium_namespace }}
+          --timeout={{ cilium_rollout_timeout }}
+      changed_when: false
+
+    - name: Wait for the load balancer CRDs to be established
+      ansible.builtin.command:
+        cmd: >-
+          kubectl wait --for=condition=established
+          --timeout={{ cilium_rollout_timeout }}
+          crd/{{ item }}
+      loop: "{{ cilium_lb_crds }}"
+      changed_when: false
+
     - name: Wait for the Cilium agents
       ansible.builtin.command:
         cmd: >-
@@ -72,3 +89,20 @@
         cmd: "kubectl apply -f {{ cilium_lb_manifest }}"
       register: cilium_lb_apply
       changed_when: "'unchanged' not in cilium_lb_apply.stdout"
+
+    - name: Restart the Cilium agents so they pick up the L2 policy
+      ansible.builtin.command:
+        cmd: >-
+          kubectl rollout restart daemonset/{{ cilium_daemonset }}
+          --namespace {{ cilium_namespace }}
+      when: cilium_lb_apply is changed
+      changed_when: true
+
+    - name: Wait for the Cilium agents after the L2 policy change
+      ansible.builtin.command:
+        cmd: >-
+          kubectl rollout status daemonset/{{ cilium_daemonset }}
+          --namespace {{ cilium_namespace }}
+          --timeout={{ cilium_rollout_timeout }}
+      when: cilium_lb_apply is changed
+      changed_when: false
