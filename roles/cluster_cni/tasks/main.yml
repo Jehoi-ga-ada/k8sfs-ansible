@@ -77,6 +77,10 @@
           --timeout={{ cilium_rollout_timeout }}
           crd/{{ item }}
       loop: "{{ cilium_lb_crds }}"
+      register: cilium_lb_crd_wait
+      until: cilium_lb_crd_wait is succeeded
+      retries: 30
+      delay: 10
       changed_when: false
 
     - name: Wait for the Cilium agents

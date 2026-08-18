@@ -4,7 +4,7 @@ cilium_version: "1.20.0"
 helm_version: "v3.21.3"
 gateway_api_version: "v1.6.1"
 
-lb_ip_pool_start: "{{ lb_lan_prefix }}.240"
-lb_ip_pool_stop: "{{ lb_lan_prefix }}.242"
+lb_ip_pool_start: "{{ lb_lan_prefix }}.250"
+lb_ip_pool_stop: "{{ lb_lan_prefix }}.250"
 l2_announce_interfaces:
   - "^(en|eth)[a-z0-9]+$"
