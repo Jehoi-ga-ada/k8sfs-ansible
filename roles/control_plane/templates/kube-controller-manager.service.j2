@@ -4,19 +4,16 @@ Documentation=https://github.com/kubernetes/kubernetes
 
 [Service]
 ExecStart=/usr/local/bin/kube-controller-manager \
-  --allocate-node-cidrs=true \
   --authentication-kubeconfig={{ kubeconfig_dir }}/kube-controller-manager.kubeconfig \
   --authorization-kubeconfig={{ kubeconfig_dir }}/kube-controller-manager.kubeconfig \
   --bind-address=127.0.0.1 \
   --client-ca-file={{ kube_ca }} \
-  --cluster-cidr={{ pod_cidr }} \
   --cluster-name=kubernetes \
   --cluster-signing-cert-file={{ kube_ca }} \
   --cluster-signing-key-file={{ kube_ca_key }} \
   --controllers=*,bootstrapsigner,tokencleaner \
   --kubeconfig={{ kubeconfig_dir }}/kube-controller-manager.kubeconfig \
   --leader-elect=true \
-  --node-cidr-mask-size=24 \
   --requestheader-client-ca-file={{ kube_ca }} \
   --root-ca-file={{ kube_ca }} \
   --service-account-private-key-file={{ key_dir }}/service-account.key \

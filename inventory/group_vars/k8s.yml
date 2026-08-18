@@ -9,4 +9,5 @@ kube_arch: arm64
 kube_release_url: "https://dl.k8s.io/release/{{ kube_version }}/bin/linux/{{ kube_arch }}"
 
 pod_cidr: 10.244.0.0/16
+pod_cidr_mask_size: 24
 service_cidr: 10.96.0.0/16

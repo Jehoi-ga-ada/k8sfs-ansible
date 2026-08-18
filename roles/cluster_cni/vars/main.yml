@@ -45,9 +45,11 @@ l2_announce_policy_name: lan-announce
 
 cilium_values:
   ipam:
-    mode: kubernetes
-  k8s:
-    requireIPv4PodCIDR: true
+    mode: cluster-pool
+    operator:
+      clusterPoolIPv4PodCIDRList:
+        - "{{ pod_cidr }}"
+      clusterPoolIPv4MaskSize: "{{ pod_cidr_mask_size }}"
   k8sServiceHost: "{{ loadbalancer_ip }}"
   k8sServicePort: "{{ apiserver_port }}"
   operator:
