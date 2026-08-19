@@ -12,6 +12,13 @@
     state: present
   become: true
 
+- name: Authorize the ansible key
+  ansible.posix.authorized_key:
+    user: "{{ sudo_user_name }}"
+    key: "{{ lookup('file', sudo_user_pubkey) }}"
+    state: present
+  become: true
+
 - name: Configure passwordless sudo privileges
   ansible.builtin.copy:
     content: "{{ sudo_user_name }} ALL=(ALL) NOPASSWD: ALL\n"

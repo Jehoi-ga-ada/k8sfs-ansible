@@ -2,3 +2,4 @@
 sudo_user_name: macos
 sudo_user_shell: /bin/bash
 sudo_user_group: wheel
+sudo_user_pubkey: "{{ ansible_ssh_private_key_file | expanduser }}.pub"
