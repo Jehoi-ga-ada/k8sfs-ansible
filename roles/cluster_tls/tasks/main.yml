@@ -228,6 +228,54 @@
         ownca_privatekey_path: /etc/ssl/private/ca.key
         provider: ownca
 
+    - name: Create private key for front-proxy CA
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/front-proxy-ca.key
+        size: 2048
+
+    - name: Create CSR for front-proxy CA
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/front-proxy-ca.csr
+        privatekey_path: /etc/ssl/private/front-proxy-ca.key
+        common_name: FRONT-PROXY-CA
+        basic_constraints:
+          - "CA:TRUE"
+        basic_constraints_critical: true
+        key_usage:
+          - keyCertSign
+          - cRLSign
+          - digitalSignature
+        key_usage_critical: true
+
+    - name: Sign front-proxy CA CSR as a self-signed certificate
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/front-proxy-ca.crt
+        csr_path: /etc/ssl/csr/front-proxy-ca.csr
+        privatekey_path: /etc/ssl/private/front-proxy-ca.key
+        provider: selfsigned
+        selfsigned_not_after: "+3650d"
+
+    - name: Create private key for front-proxy client
+      community.crypto.openssl_privatekey:
+        path: /etc/ssl/private/front-proxy-client.key
+        size: 2048
+
+    - name: Create CSR for front-proxy client
+      community.crypto.openssl_csr:
+        path: /etc/ssl/csr/front-proxy-client.csr
+        privatekey_path: /etc/ssl/private/front-proxy-client.key
+        common_name: front-proxy-client
+        extended_key_usage:
+          - clientAuth
+
+    - name: Sign CSR for front-proxy client using the front-proxy CA
+      community.crypto.x509_certificate:
+        path: /etc/ssl/certs/front-proxy-client.crt
+        csr_path: /etc/ssl/csr/front-proxy-client.csr
+        ownca_path: /etc/ssl/certs/front-proxy-ca.crt
+        ownca_privatekey_path: /etc/ssl/private/front-proxy-ca.key
+        provider: ownca
+
 - name: Pull generated certs/keys to the controller
   become: true
   ansible.builtin.fetch:

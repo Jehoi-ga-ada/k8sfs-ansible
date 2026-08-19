@@ -14,6 +14,10 @@ control_plane_certs:
   - /etc/ssl/certs/kube-controller-manager.crt
   - /etc/ssl/private/kube-scheduler.key
   - /etc/ssl/certs/kube-scheduler.crt
+  - /etc/ssl/private/front-proxy-ca.key
+  - /etc/ssl/certs/front-proxy-ca.crt
+  - /etc/ssl/private/front-proxy-client.key
+  - /etc/ssl/certs/front-proxy-client.crt
 
 node_certs:
   - /etc/ssl/certs/ca.crt
