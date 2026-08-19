@@ -17,6 +17,8 @@ all:
     orchard_controller_host: macmini
     cluster_name: k8sfs-macmini
     kubectl_local_config: "{{ lookup('env', 'HOME') }}/.kube/k8sfs-macmini.config"
+    lb_ip_pool_start: 10.218.65.76
+    lb_ip_pool_stop: 10.218.65.79
 
   children:
     orchard_controller:
