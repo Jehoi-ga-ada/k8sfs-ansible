@@ -12,6 +12,9 @@ all:
       ansible_user: macos
       ansible_python_interpreter: /usr/bin/python3
 
+  vars:
+    orchard_controller_host: macos
+
   children:
     orchard_controller:
       hosts:
@@ -20,3 +23,15 @@ all:
     orchard_workers:
       hosts:
         macos:
+
+    k8s:
+      vars:
+        ansible_ssh_common_args: '-o ProxyJump=macos@100.126.151.59'
+      children:
+        master:
+        worker:
+        lb:
+
+    control_plane:
+      children:
+        master:

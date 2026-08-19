@@ -1,0 +1,51 @@
+---
+all:
+  hosts:
+    macmini:
+      ansible_host: 10.218.65.70
+      ansible_user: macos
+      ansible_ssh_private_key_file: ~/.ssh/ansible
+      ansible_python_interpreter: /usr/bin/python3
+
+    group-mac-mini:
+      ansible_host: 10.218.65.70
+      ansible_user: ladmin
+      ansible_ssh_private_key_file: ~/.ssh/ansible
+      ansible_python_interpreter: /usr/bin/python3
+
+  vars:
+    orchard_controller_host: macmini
+    cluster_name: k8sfs-macmini
+    kubectl_local_config: "{{ lookup('env', 'HOME') }}/.kube/k8sfs-macmini.config"
+
+  children:
+    orchard_controller:
+      hosts:
+        macmini:
+
+    orchard_workers:
+      hosts:
+        macmini:
+
+    k8s:
+      children:
+        master:
+          hosts:
+            master-1:
+              ansible_host: 10.218.65.71
+            master-2:
+              ansible_host: 10.218.65.72
+        worker:
+          hosts:
+            worker-1:
+              ansible_host: 10.218.65.73
+            worker-2:
+              ansible_host: 10.218.65.74
+        lb:
+          hosts:
+            lb-1:
+              ansible_host: 10.218.65.75
+
+    control_plane:
+      children:
+        master:
