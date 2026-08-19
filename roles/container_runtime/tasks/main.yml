@@ -1,7 +1,7 @@
 ---
 - name: Install the container runtime
   become: true
-  when: inventory_hostname in groups['worker']
+  when: inventory_hostname in kubelet_node_hosts
   block:
     - name: Install apt prerequisites
       ansible.builtin.apt:
