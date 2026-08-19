@@ -1,12 +1,20 @@
+{% for pool in lb_ip_pools %}
 ---
 apiVersion: cilium.io/v2
 kind: CiliumLoadBalancerIPPool
 metadata:
-  name: {{ lb_ip_pool_name }}
+  name: {{ pool.name }}
 spec:
+{% if pool.service_selector is defined %}
+  serviceSelector:
+{{ pool.service_selector | to_nice_yaml(indent=2) | trim | indent(4, true) }}
+{% endif %}
   blocks:
-    - start: "{{ lb_ip_pool_start }}"
-      stop: "{{ lb_ip_pool_stop }}"
+{% for block in pool.blocks %}
+    - start: "{{ block.start }}"
+      stop: "{{ block.stop }}"
+{% endfor %}
+{% endfor %}
 ---
 apiVersion: cilium.io/v2alpha1
 kind: CiliumL2AnnouncementPolicy
