@@ -1,5 +1,6 @@
 ---
 master_node: master-1
+cluster_name: kubernetes-the-hard-way
 kubectl_local_config: "{{ lookup('env', 'HOME') }}/.kube/k8sfs.config"
 kubectl_verify_timeout: 5s
 kubectl_verify_retries: 3
