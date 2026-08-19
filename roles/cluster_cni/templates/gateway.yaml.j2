@@ -6,6 +6,11 @@ metadata:
   namespace: {{ gateway_namespace }}
 spec:
   gatewayClassName: {{ gateway_class_name }}
+{% if gateway_address | default('') | length > 0 %}
+  addresses:
+    - type: IPAddress
+      value: {{ gateway_address }}
+{% endif %}
   listeners:
     - name: http
       protocol: HTTP

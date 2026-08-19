@@ -16,3 +16,4 @@ lb_ip_pools:
 
 l2_announce_interfaces:
   - "^(en|eth)[a-z0-9]+$"
+gateway_address: ""
