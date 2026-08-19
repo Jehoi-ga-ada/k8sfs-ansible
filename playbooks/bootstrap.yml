@@ -1,8 +1,10 @@
 ---
 - name: Bootstrap a mac for the cluster
-  hosts: jeho-mac
+  hosts: bootstrap
   roles:
     - role: elliotweiser.osx-command-line-tools
       become: true
     - role: sudo_user
     - role: tailscale
+      tags: tailscale
+      when: use_tailscale | default(false) | bool

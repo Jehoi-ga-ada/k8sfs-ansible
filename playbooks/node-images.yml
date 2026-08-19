@@ -1,0 +1,7 @@
+---
+- name: Build the per-node VM images
+  hosts: orchard_workers
+  gather_facts: true
+  roles:
+    - role: node_image
+      tags: node_image
