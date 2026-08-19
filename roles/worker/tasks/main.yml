@@ -51,7 +51,7 @@
 
 - name: Bootstrap the worker
   become: true
-  when: inventory_hostname in groups['worker']
+  when: inventory_hostname in kubelet_node_hosts
   block:
     - name: Install worker binaries
       ansible.builtin.get_url:
@@ -114,7 +114,7 @@
       --output jsonpath={.items[*].metadata.name}
       --kubeconfig {{ admin_kubeconfig }}
   register: serving_csrs
-  until: serving_csrs.stdout.split() | length >= groups['worker'] | length
+  until: serving_csrs.stdout.split() | length >= kubelet_node_hosts | length
   retries: 12
   delay: 5
   failed_when: false
@@ -139,10 +139,38 @@
   ansible.builtin.command:
     cmd: kubectl get nodes --kubeconfig {{ admin_kubeconfig }}
   register: registered_nodes
-  until: registered_nodes.stdout_lines | length > groups['worker'] | length
+  until: registered_nodes.stdout_lines | length > kubelet_node_hosts | length
   retries: 10
   delay: 5
   changed_when: false
+  run_once: true
+  delegate_to: "{{ master_node }}"
+
+- name: Taint the control-plane nodes
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      kubectl taint node {{ item }}
+      {{ control_plane_taint }}=:NoSchedule --overwrite
+      --kubeconfig {{ admin_kubeconfig }}
+  loop: "{{ groups['master'] }}"
+  register: control_plane_taints
+  changed_when: "'tainted' in control_plane_taints.stdout"
+  when: masters_as_nodes | bool
+  run_once: true
+  delegate_to: "{{ master_node }}"
+
+- name: Label the control-plane nodes
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      kubectl label node {{ item }}
+      {{ control_plane_taint }}= --overwrite
+      --kubeconfig {{ admin_kubeconfig }}
+  loop: "{{ groups['master'] }}"
+  register: control_plane_labels
+  changed_when: "'labeled' in control_plane_labels.stdout"
+  when: masters_as_nodes | bool
   run_once: true
   delegate_to: "{{ master_node }}"
 

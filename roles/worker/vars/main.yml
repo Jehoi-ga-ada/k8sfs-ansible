@@ -29,3 +29,6 @@ bootstrap_token_expiration: "{{ '%Y-%m-%dT%H:%M:%SZ' | strftime(ansible_date_tim
 bootstrap_group: system:bootstrappers:worker
 bootstrap_manifest_dir: /var/lib/kubernetes/bootstrap
 kubelet_serving_signer: kubernetes.io/kubelet-serving
+
+kubelet_node_hosts: "{{ groups['worker'] + (groups['master'] if (masters_as_nodes | bool) else []) }}"
+control_plane_taint: node-role.kubernetes.io/control-plane
