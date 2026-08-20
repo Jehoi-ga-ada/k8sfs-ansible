@@ -22,9 +22,6 @@ all:
     lb_ip_pool_stop: 10.218.65.79
     node_image_env: macmini
     node_gateway: 10.218.65.1
-    node_image_registry: ghcr.io/jehoi-ga-ada/k8sfs-node
-    node_image_registry_username: Jehoi-ga-ada
-    node_image_registry_token: "{{ ghcr_token | default('') }}"
 
   children:
     bootstrap:
