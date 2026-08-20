@@ -30,4 +30,4 @@ cri_sysctl:
 
 containerd_config: /etc/containerd/config.toml
 
-kubelet_node_hosts: "{{ groups['worker'] + (groups['master'] if (masters_as_nodes | bool) else []) }}"
+kubelet_node_hosts: "{{ groups['worker'] + groups['master'] }}"

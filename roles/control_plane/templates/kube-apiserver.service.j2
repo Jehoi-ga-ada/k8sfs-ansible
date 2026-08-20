@@ -15,7 +15,6 @@ ExecStart=/usr/local/bin/kube-apiserver \
   --bind-address=0.0.0.0 \
   --client-ca-file={{ kube_ca }} \
   --enable-admission-plugins=NodeRestriction,ServiceAccount \
-  --enable-aggregator-routing=true \
   --enable-bootstrap-token-auth=true \
   --etcd-cafile={{ kube_ca }} \
   --etcd-certfile={{ cert_dir }}/etcd-server.crt \

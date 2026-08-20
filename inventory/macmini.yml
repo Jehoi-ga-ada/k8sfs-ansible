@@ -15,7 +15,6 @@ all:
 
   vars:
     orchard_controller_host: macmini
-    masters_as_nodes: true
     cluster_name: k8sfs-macmini
     kubectl_local_config: "{{ lookup('env', 'HOME') }}/.kube/k8sfs-macmini.config"
     gateway_address: 10.218.65.76

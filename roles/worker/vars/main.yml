@@ -30,5 +30,5 @@ bootstrap_group: system:bootstrappers:worker
 bootstrap_manifest_dir: /var/lib/kubernetes/bootstrap
 kubelet_serving_signer: kubernetes.io/kubelet-serving
 
-kubelet_node_hosts: "{{ groups['worker'] + (groups['master'] if (masters_as_nodes | bool) else []) }}"
+kubelet_node_hosts: "{{ groups['worker'] + groups['master'] }}"
 control_plane_taint: node-role.kubernetes.io/control-plane

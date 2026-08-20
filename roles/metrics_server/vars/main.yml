@@ -9,5 +9,3 @@ metrics_server_manifest_url: "https://github.com/kubernetes-sigs/metrics-server/
 
 metrics_server_addon_dir: "{{ kubeconfig_dir }}/addons"
 metrics_server_patch: "{{ metrics_server_addon_dir }}/metrics-server-patch.yaml"
-
-metrics_server_secure_port: "{{ 4443 if (metrics_server_host_network | bool) else 10250 }}"

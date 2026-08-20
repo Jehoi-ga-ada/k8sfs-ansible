@@ -28,13 +28,13 @@
       register: metrics_server_apply
       changed_when: metrics_server_apply is not skipped
 
-    - name: Render the metrics-server host-network patch
+    - name: Render the metrics-server override patch
       ansible.builtin.template:
         src: metrics-server-patch.yaml.j2
         dest: "{{ metrics_server_patch }}"
         mode: '0600'
 
-    - name: Patch metrics-server onto the host network
+    - name: Apply the metrics-server overrides
       ansible.builtin.command:
         cmd: >-
           kubectl patch deployment/{{ metrics_server_deployment }}

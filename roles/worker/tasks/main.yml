@@ -156,7 +156,6 @@
   loop: "{{ groups['master'] }}"
   register: control_plane_taints
   changed_when: "'tainted' in control_plane_taints.stdout"
-  when: masters_as_nodes | bool
   run_once: true
   delegate_to: "{{ master_node }}"
 
@@ -170,7 +169,6 @@
   loop: "{{ groups['master'] }}"
   register: control_plane_labels
   changed_when: "'labeled' in control_plane_labels.stdout"
-  when: masters_as_nodes | bool
   run_once: true
   delegate_to: "{{ master_node }}"
 

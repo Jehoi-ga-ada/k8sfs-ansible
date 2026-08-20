@@ -15,7 +15,6 @@ all:
   vars:
     orchard_controller_host: macos
     use_tailscale: true
-    masters_as_nodes: true
 
   children:
     bootstrap:
