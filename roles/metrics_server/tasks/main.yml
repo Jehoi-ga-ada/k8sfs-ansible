@@ -1,0 +1,75 @@
+---
+- name: Deploy metrics-server
+  become: true
+  run_once: true
+  delegate_to: "{{ master_node }}"
+  environment:
+    KUBECONFIG: "{{ admin_kubeconfig }}"
+  block:
+    - name: Ensure the addon dir exists
+      ansible.builtin.file:
+        path: "{{ metrics_server_addon_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Check whether metrics-server is already installed
+      ansible.builtin.command:
+        cmd: >-
+          kubectl get deployment/{{ metrics_server_deployment }}
+          --namespace {{ metrics_server_namespace }}
+          --ignore-not-found --output name
+      register: metrics_server_existing
+      changed_when: false
+
+    - name: Install metrics-server
+      ansible.builtin.command:
+        cmd: "kubectl apply -f {{ metrics_server_manifest_url }}"
+      when: metrics_server_existing.stdout | trim | length == 0
+      register: metrics_server_apply
+      changed_when: metrics_server_apply is not skipped
+
+    - name: Render the metrics-server host-network patch
+      ansible.builtin.template:
+        src: metrics-server-patch.yaml.j2
+        dest: "{{ metrics_server_patch }}"
+        mode: '0600'
+
+    - name: Patch metrics-server onto the host network
+      ansible.builtin.command:
+        cmd: >-
+          kubectl patch deployment/{{ metrics_server_deployment }}
+          --namespace {{ metrics_server_namespace }}
+          --patch-file {{ metrics_server_patch }}
+      register: metrics_server_patched
+      changed_when: "'no change' not in metrics_server_patched.stdout"
+
+    - name: Wait for metrics-server to become available
+      ansible.builtin.command:
+        cmd: >-
+          kubectl rollout status deployment/{{ metrics_server_deployment }}
+          --namespace {{ metrics_server_namespace }}
+          --timeout={{ metrics_server_rollout_timeout }}
+      changed_when: false
+
+    - name: Wait for the metrics API to become available
+      ansible.builtin.command:
+        cmd: >-
+          kubectl wait --for=condition=Available
+          apiservice/{{ metrics_server_apiservice }}
+          --timeout=120s
+      register: metrics_api_wait
+      until: metrics_api_wait is succeeded
+      retries: 3
+      delay: 10
+      changed_when: false
+
+    - name: Metrics API status
+      ansible.builtin.command:
+        cmd: kubectl top nodes --no-headers
+      register: metrics_top
+      changed_when: false
+      failed_when: false
+
+    - name: Node metrics
+      ansible.builtin.debug:
+        msg: "{{ metrics_top.stdout_lines if metrics_top.rc == 0 else metrics_top.stderr_lines }}"

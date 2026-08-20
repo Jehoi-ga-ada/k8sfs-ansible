@@ -1,0 +1,13 @@
+---
+kubeconfig_dir: /var/lib/kubernetes
+admin_kubeconfig: "{{ kubeconfig_dir }}/admin.kubeconfig"
+
+metrics_server_namespace: kube-system
+metrics_server_deployment: metrics-server
+metrics_server_apiservice: v1beta1.metrics.k8s.io
+metrics_server_manifest_url: "https://github.com/kubernetes-sigs/metrics-server/releases/download/{{ metrics_server_version }}/components.yaml"
+
+metrics_server_addon_dir: "{{ kubeconfig_dir }}/addons"
+metrics_server_patch: "{{ metrics_server_addon_dir }}/metrics-server-patch.yaml"
+
+metrics_server_secure_port: "{{ 4443 if (metrics_server_host_network | bool) else 10250 }}"
