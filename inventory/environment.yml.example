@@ -1,0 +1,60 @@
+---
+all:
+  hosts:
+    host-admin:
+      ansible_host: 192.0.2.20
+      ansible_user: youradmin
+      ansible_ssh_private_key_file: ~/.ssh/ansible
+      ansible_python_interpreter: /usr/bin/python3
+
+    host:
+      ansible_host: 192.0.2.20
+      ansible_user: macos
+      ansible_ssh_private_key_file: ~/.ssh/ansible
+      ansible_python_interpreter: /usr/bin/python3
+
+  vars:
+    orchard_controller_host: host
+    cluster_name: k8sfs-example
+    kubectl_local_config: "{{ lookup('env', 'HOME') }}/.kube/k8sfs-example.config"
+    gateway_address: 192.0.2.76
+    lb_ip_pool_start: 192.0.2.76
+    lb_ip_pool_stop: 192.0.2.79
+    node_image_env: example
+    node_gateway: 192.0.2.1
+
+  children:
+    bootstrap:
+      hosts:
+        host-admin:
+
+    orchard_controller:
+      hosts:
+        host:
+
+    orchard_workers:
+      hosts:
+        host:
+
+    k8s:
+      children:
+        master:
+          hosts:
+            master-1:
+              ansible_host: 192.0.2.71
+            master-2:
+              ansible_host: 192.0.2.72
+        worker:
+          hosts:
+            worker-1:
+              ansible_host: 192.0.2.73
+            worker-2:
+              ansible_host: 192.0.2.74
+        lb:
+          hosts:
+            lb-1:
+              ansible_host: 192.0.2.75
+
+    control_plane:
+      children:
+        master:

@@ -1,0 +1,6 @@
+---
+orchard_bootstrap_admin_token: REPLACE_ME
+orchard_terraform_token: REPLACE_ME
+tailscale_authkey: REPLACE_ME
+kubelet_bootstrap_token_id: abc123
+kubelet_bootstrap_token_secret: 0123456789abcdef
