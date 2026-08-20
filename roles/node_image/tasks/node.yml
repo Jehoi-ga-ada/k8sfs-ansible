@@ -1,0 +1,91 @@
+---
+- name: Set the image names for {{ node }}
+  ansible.builtin.set_fact:
+    node_local_image: "{{ node }}{{ node_image_suffix }}"
+
+- name: Remove any previous image for {{ node }}
+  ansible.builtin.command:
+    cmd: "{{ tart_bin }} delete {{ node_local_image }}"
+  register: node_delete
+  failed_when: false
+  changed_when: node_delete.rc == 0
+
+- name: Clone the template for {{ node }}
+  ansible.builtin.command:
+    cmd: "{{ tart_bin }} clone {{ node_image_template_local }} {{ node_local_image }}"
+  changed_when: true
+
+- name: Start {{ node }} on NAT
+  ansible.builtin.shell:
+    cmd: >-
+      nohup {{ tart_bin }} run --no-graphics {{ node_local_image }}
+      > {{ node_image_work_dir }}/{{ node_local_image }}.log 2>&1 &
+  changed_when: true
+
+- name: Wait for {{ node }} to get a NAT address
+  ansible.builtin.command:
+    cmd: "{{ tart_bin }} ip {{ node_local_image }} --wait 5"
+  register: node_nat_ip
+  until: node_nat_ip.rc == 0 and node_nat_ip.stdout | trim | length > 0
+  retries: "{{ (node_image_boot_timeout | int / 10) | round | int }}"
+  delay: 10
+  changed_when: false
+
+- name: Render the configuration script for {{ node }}
+  ansible.builtin.template:
+    src: configure-node.sh.j2
+    dest: "{{ node_image_work_dir }}/{{ node_local_image }}-configure.sh"
+    mode: '0700'
+
+- name: Wait for sshd on {{ node }}
+  ansible.builtin.command:
+    cmd: >-
+      ssh -i {{ node_image_bake_key }} -o StrictHostKeyChecking=no
+      -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=10
+      {{ node_guest_user }}@{{ node_nat_ip.stdout | trim }} true
+  register: node_ssh
+  until: node_ssh.rc == 0
+  retries: 18
+  delay: 5
+  changed_when: false
+
+- name: Apply the static network config and hostname on {{ node }}
+  ansible.builtin.shell:
+    cmd: >-
+      ssh -i {{ node_image_bake_key }} -o StrictHostKeyChecking=no
+      -o UserKnownHostsFile=/dev/null -o BatchMode=yes
+      {{ node_guest_user }}@{{ node_nat_ip.stdout | trim }} bash -s
+      < {{ node_image_work_dir }}/{{ node_local_image }}-configure.sh
+  register: node_configured
+  changed_when: "'CONFIGURED' in node_configured.stdout"
+  failed_when: "'CONFIGURED' not in node_configured.stdout"
+
+- name: Shut {{ node }} down
+  ansible.builtin.command:
+    cmd: >-
+      ssh -i {{ node_image_bake_key }} -o StrictHostKeyChecking=no
+      -o UserKnownHostsFile=/dev/null -o BatchMode=yes
+      {{ node_guest_user }}@{{ node_nat_ip.stdout | trim }} sudo systemctl poweroff
+  failed_when: false
+  changed_when: true
+
+- name: Wait for {{ node }} to stop
+  ansible.builtin.command:
+    cmd: "{{ tart_bin }} list --format json"
+  register: node_stopped
+  until: >-
+    (node_stopped.stdout | from_json
+     | selectattr('Name', 'equalto', node_local_image)
+     | map(attribute='State') | first | default('stopped')) == 'stopped'
+  retries: 30
+  delay: 5
+  changed_when: false
+
+- name: Confirm the {{ node }} image exists
+  ansible.builtin.command:
+    cmd: "{{ tart_bin }} list --format json"
+  register: node_image_check
+  changed_when: false
+  failed_when: >-
+    node_local_image not in
+    (node_image_check.stdout | from_json | map(attribute='Name') | list)

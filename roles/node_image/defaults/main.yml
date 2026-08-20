@@ -1,0 +1,18 @@
+---
+node_image_base: ghcr.io/cirruslabs/debian:latest
+node_image_env: ""
+node_image_force: false
+
+node_image_hosts: "{{ groups['k8s'] }}"
+node_image_suffix: "-static"
+
+node_net_prefix: 24
+node_gateway: ""
+node_nameservers:
+  - 1.1.1.1
+
+node_guest_nic: enp0s1
+node_guest_user: admin
+node_guest_password: admin
+node_image_boot_timeout: 180
+node_image_ansible_pubkey_file: ~/.ssh/ansible.pub

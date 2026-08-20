@@ -1,0 +1,57 @@
+---
+- name: Bake per-node VM images
+  become: false
+  run_once: true
+  delegate_to: "{{ groups['orchard_workers'] | first }}"
+  block:
+    - name: Assert the image build inputs are set
+      ansible.builtin.assert:
+        that:
+          - node_image_env | trim | length > 0
+          - node_gateway | trim | length > 0
+        fail_msg: node_image_env and node_gateway are required
+
+    - name: Ensure the image build dir exists
+      ansible.builtin.file:
+        path: "{{ node_image_work_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Create the local bake keypair
+      community.crypto.openssh_keypair:
+        path: "{{ node_image_bake_key }}"
+        type: ed25519
+      register: bake_key
+
+    - name: Check whether the template image exists
+      ansible.builtin.command:
+        cmd: "{{ tart_bin }} list --format json"
+      register: tart_inventory
+      changed_when: false
+
+    - name: Build the template image
+      ansible.builtin.include_tasks: template.yml
+      when: >-
+        node_image_force | bool
+        or node_image_template_local not in
+           (tart_inventory.stdout | from_json | map(attribute='Name') | list)
+
+    - name: Bake each node image
+      ansible.builtin.include_tasks: node.yml
+      loop: "{{ node_image_hosts }}"
+      loop_control:
+        loop_var: node
+
+    - name: List the baked images
+      ansible.builtin.command:
+        cmd: "{{ tart_bin }} list --format json"
+      register: baked_images
+      changed_when: false
+
+    - name: Baked images
+      ansible.builtin.debug:
+        msg: >-
+          {{ baked_images.stdout | from_json
+             | selectattr('Name', 'in', node_image_hosts
+               | map('regex_replace', '$', node_image_suffix) | list)
+             | map(attribute='Name') | list }}

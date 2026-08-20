@@ -1,0 +1,16 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    {{ node_guest_nic }}:
+      dhcp4: false
+      addresses:
+        - {{ hostvars[node].ansible_host }}/{{ node_net_prefix }}
+      routes:
+        - to: default
+          via: {{ node_gateway }}
+      nameservers:
+        addresses:
+{% for ns in node_nameservers %}
+          - {{ ns }}
+{% endfor %}

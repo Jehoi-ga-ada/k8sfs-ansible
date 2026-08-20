@@ -1,0 +1,66 @@
+---
+- name: Remove any previous template image
+  ansible.builtin.command:
+    cmd: "{{ tart_bin }} delete {{ node_image_template_local }}"
+  register: template_delete
+  failed_when: false
+  changed_when: template_delete.rc == 0
+
+- name: Clone the base image into the template
+  ansible.builtin.command:
+    cmd: "{{ tart_bin }} clone {{ node_image_base }} {{ node_image_template_local }}"
+  changed_when: true
+
+- name: Start the template on NAT
+  ansible.builtin.shell:
+    cmd: >-
+      nohup {{ tart_bin }} run --no-graphics {{ node_image_template_local }}
+      > {{ node_image_work_dir }}/{{ node_image_template_local }}.log 2>&1 &
+  changed_when: true
+
+- name: Wait for the template to get a NAT address
+  ansible.builtin.command:
+    cmd: "{{ tart_bin }} ip {{ node_image_template_local }} --wait 5"
+  register: template_ip
+  until: template_ip.rc == 0 and template_ip.stdout | trim | length > 0
+  retries: "{{ (node_image_boot_timeout | int / 10) | round | int }}"
+  delay: 10
+  changed_when: false
+
+- name: Render the template seeding script
+  ansible.builtin.template:
+    src: seed-template.exp.j2
+    dest: "{{ node_image_work_dir }}/seed-template.exp"
+    mode: '0700'
+  vars:
+    bake_pubkey: "{{ bake_key.public_key }}"
+
+- name: Seed the template with the authorized keys
+  ansible.builtin.command:
+    cmd: "/usr/bin/expect {{ node_image_work_dir }}/seed-template.exp {{ template_ip.stdout | trim }}"
+  register: template_seed
+  until: "'SEEDED' in template_seed.stdout"
+  retries: 3
+  delay: 10
+  changed_when: true
+
+- name: Shut the template down
+  ansible.builtin.command:
+    cmd: >-
+      ssh -i {{ node_image_bake_key }} -o StrictHostKeyChecking=no
+      -o UserKnownHostsFile=/dev/null -o BatchMode=yes
+      {{ node_guest_user }}@{{ template_ip.stdout | trim }} sudo systemctl poweroff
+  failed_when: false
+  changed_when: true
+
+- name: Wait for the template to stop
+  ansible.builtin.command:
+    cmd: "{{ tart_bin }} list --format json"
+  register: template_stopped
+  until: >-
+    (template_stopped.stdout | from_json
+     | selectattr('Name', 'equalto', node_image_template_local)
+     | map(attribute='State') | first | default('stopped')) == 'stopped'
+  retries: 30
+  delay: 5
+  changed_when: false

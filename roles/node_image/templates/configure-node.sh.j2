@@ -1,0 +1,11 @@
+set -e
+sudo tee /etc/netplan/99-static.yaml >/dev/null <<'NETPLAN'
+{% include 'netplan-static.yaml.j2' %}
+NETPLAN
+sudo chmod 600 /etc/netplan/99-static.yaml
+sudo touch /etc/cloud/cloud-init.disabled
+sudo mv -f /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.disabled 2>/dev/null || true
+sudo netplan generate
+sudo hostnamectl set-hostname {{ node }}
+sudo sed -i "s/^127\.0\.1\.1.*/127.0.1.1 {{ node }}/" /etc/hosts
+echo CONFIGURED

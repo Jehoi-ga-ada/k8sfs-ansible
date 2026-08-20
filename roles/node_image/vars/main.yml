@@ -1,0 +1,6 @@
+---
+tart_bin: "{{ homebrew_prefix | default('/opt/homebrew') }}/bin/tart"
+node_image_work_dir: /tmp/k8sfs-node-image
+node_image_bake_key: "{{ ansible_env.HOME }}/.ssh/k8sfs-bake"
+node_image_template_local: "{{ node_image_env }}-template"
+node_image_ansible_pubkey: "{{ lookup('file', node_image_ansible_pubkey_file | expanduser) }}"
